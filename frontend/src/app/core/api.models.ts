@@ -25,28 +25,65 @@ export interface ClubSummary {
   phone?: string;
 }
 
+export interface CoordinatorSearch {
+  category?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface CoordinatorSummary {
+  category: string;
+  grouping: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phonePrimary: string;
+  phoneSecondary: string;
+  extension: string;
+  fax: string;
+  email: string;
+}
+
 export interface TournamentSearch {
+  season?: string;
   program: 'jr' | 'boys' | 'adt';
   division?: string;
   host?: string;
   name?: string;
   type?: string;
   date?: string;
+  clubCode?: string;
+  hasNotes?: string;
+  notPosted?: string;
 }
 
 export interface TournamentSummary {
   id: string;
   uniqueId: string;
   date: string;
+  startTime: string | null;
   division: string;
   type: string;
   name: string;
   host: string;
+  clubCode: string;
+  clubName: string;
   teamCount: number | null;
+  minimumTeamCount: number | null;
   site: string;
+  siteAddress: string;
   closeDate: string | null;
   priority: string | null;
   status: string;
+  addedToAesDate: string | null;
+  okToPay: boolean;
+  paymentType: string;
+  checkPayableTo: string;
+  fee: number | null;
+  weekNumber: number | null;
 }
 
 export interface FeatureInventory {

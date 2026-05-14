@@ -2,73 +2,75 @@ import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { startWith, switchMap } from 'rxjs';
-import { ClubSearch } from '../../core/api.models';
+import { CoordinatorSearch } from '../../core/api.models';
 import { ChrvaApiService } from '../../core/chrva-api.service';
 
 @Component({
-  selector: 'app-clubs-page',
+  selector: 'app-coordinators-page',
   standalone: true,
   imports: [AsyncPipe, NgFor, NgIf, ReactiveFormsModule],
   template: `
     <section class="page-header">
       <div>
-        <h1>Club Contacts</h1>
-        <p>Search active junior clubs from the configured SQL Server environment.</p>
+        <h1>Regional Junior Contacts</h1>
+        <p>Search regional contacts from the configured SQL Server environment.</p>
       </div>
     </section>
 
     <form [formGroup]="form" class="filters">
       <label>
-        Club Name
-        <input formControlName="clubName" />
+        Category
+        <select formControlName="category">
+          <option value="">All</option>
+          <option value="Coordinator">Age Group Coordinators</option>
+          <option value="Officials">Officials/Scorekeepers</option>
+          <option value="Administrators">Administration</option>
+        </select>
       </label>
       <label>
         First Name
-        <input formControlName="contactFirstName" />
+        <input formControlName="firstName" />
       </label>
       <label>
         Last Name
-        <input formControlName="contactLastName" />
-      </label>
-      <label>
-        State
-        <select formControlName="state">
-          <option value="">All</option>
-          <option value="DC">DC</option>
-          <option value="DE">DE</option>
-          <option value="MD">MD</option>
-          <option value="VA">VA</option>
-          <option value="WV">WV</option>
-        </select>
+        <input formControlName="lastName" />
       </label>
     </form>
 
-    <table *ngIf="clubs$ | async as clubs">
+    <table *ngIf="coordinators$ | async as coordinators">
       <thead>
         <tr>
-          <th>Club</th>
+          <th>Category</th>
           <th>Contact</th>
           <th>Address</th>
-          <th>State</th>
-          <th>Website</th>
           <th>Phone</th>
+          <th>Email</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let club of clubs">
+        <tr *ngFor="let coordinator of coordinators">
           <td>
-            <strong>{{ club.clubName }}</strong>
-            <small>{{ club.clubCode }}</small>
+            <strong>{{ coordinator.category }}</strong>
+            <small>{{ coordinator.grouping }}</small>
           </td>
-          <td>{{ club.contactFirstName }} {{ club.contactLastName }}</td>
-          <td>{{ club.address }} {{ club.zip }}</td>
-          <td>{{ club.state }}</td>
+          <td>{{ coordinator.firstName }} {{ coordinator.lastName }}</td>
           <td>
-            <a *ngIf="club.website" [href]="'https://' + club.website" target="_blank" rel="noreferrer">
-              Web Page
+            {{ coordinator.address }}
+            <small>{{ coordinator.city }} {{ coordinator.state }} {{ coordinator.zip }}</small>
+          </td>
+          <td>
+            {{ coordinator.phonePrimary }}
+            <small *ngIf="coordinator.phoneSecondary">
+              {{ coordinator.phoneSecondary }}
+              <span *ngIf="coordinator.extension">ext. {{ coordinator.extension }}</span>
+            </small>
+            <small *ngIf="coordinator.fax">Fax: {{ coordinator.fax }}</small>
+          </td>
+          <td>
+            <a *ngIf="coordinator.email" [href]="'mailto:' + coordinator.email">
+              {{ coordinator.email }}
             </a>
           </td>
-          <td>{{ club.phone }}</td>
         </tr>
       </tbody>
     </table>
@@ -101,7 +103,7 @@ import { ChrvaApiService } from '../../core/chrva-api.service';
       border-radius: 6px;
       display: grid;
       gap: 16px;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       margin-bottom: 20px;
       padding: 18px;
     }
@@ -156,17 +158,16 @@ import { ChrvaApiService } from '../../core/chrva-api.service';
     }
   `]
 })
-export class ClubsPageComponent {
+export class CoordinatorsPageComponent {
   readonly form = this.fb.nonNullable.group({
-    clubName: '',
-    contactFirstName: '',
-    contactLastName: '',
-    state: ''
+    category: '',
+    firstName: '',
+    lastName: ''
   });
 
-  readonly clubs$ = this.form.valueChanges.pipe(
+  readonly coordinators$ = this.form.valueChanges.pipe(
     startWith(this.form.getRawValue()),
-    switchMap((search) => this.api.searchClubs(search as ClubSearch))
+    switchMap((search) => this.api.searchCoordinators(search as CoordinatorSearch))
   );
 
   constructor(

@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+!.env.test.example
+!.env.prod.example
+*.log
+beekeeper-connection*.json
+
+node_modules/

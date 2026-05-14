@@ -2,49 +2,11 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getAppConfig, searchClubs, searchCoordinators, searchTournaments } from './db.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const mirrorRoot = join(__dirname, '..', '..');
 const port = Number(process.env.PORT ?? 4300);
-
-const legacyConfig = {
-  previousSeason: '2026',
-  currentSeason: '2027',
-  nextSeason: '2028',
-  seasonStatus: 'Open',
-  sanctionStatus: 'Open'
-};
-
-const clubs = [
-  {
-    clubCode: 'MIGRATION-SAMPLE',
-    clubName: 'Migration Sample Volleyball Club',
-    contactFirstName: 'Legacy',
-    contactLastName: 'Contact',
-    address: 'Replace with clubcontacts query results',
-    state: 'VA',
-    zip: '',
-    website: 'www.chrva.org',
-    phone: ''
-  }
-];
-
-const tournaments = [
-  {
-    id: 'migration-sample',
-    uniqueId: 'MIGRATION-SAMPLE',
-    date: '2027-01-01',
-    division: 'Girls 16',
-    type: 'Open',
-    name: 'Migration Sample Tournament',
-    host: 'Replace with sanction query results',
-    teamCount: null,
-    site: 'TBD',
-    closeDate: null,
-    priority: null,
-    status: 'Draft'
-  }
-];
 
 createServer(async (request, response) => {
   try {
@@ -56,15 +18,19 @@ createServer(async (request, response) => {
     }
 
     if (route === 'GET /api/config') {
-      return json(response, legacyConfig);
+      return json(response, getAppConfig());
     }
 
     if (route === 'GET /api/clubs') {
-      return json(response, filterClubs(url.searchParams));
+      return json(response, await searchClubs(url.searchParams));
+    }
+
+    if (route === 'GET /api/coordinators') {
+      return json(response, await searchCoordinators(url.searchParams));
     }
 
     if (route === 'GET /api/tournaments') {
-      return json(response, filterTournaments(url.searchParams));
+      return json(response, await searchTournaments(url.searchParams));
     }
 
     if (route === 'GET /api/migration/inventory') {
@@ -74,36 +40,21 @@ createServer(async (request, response) => {
     response.writeHead(404, { 'content-type': 'application/json' });
     response.end(JSON.stringify({ error: 'Not found' }));
   } catch (error) {
-    response.writeHead(500, { 'content-type': 'application/json' });
-    response.end(JSON.stringify({ error: error.message }));
+    const status = error.code === 'ELOGIN' || error.code === 'ESOCKET' ? 503 : 500;
+    console.error(`[${new Date().toISOString()}] ${request.method} ${request.url} failed`, {
+      code: error.code,
+      message: error.message
+    });
+    response.writeHead(status, { 'content-type': 'application/json' });
+    response.end(JSON.stringify({
+      error: status === 503 ? 'Database unavailable' : 'Internal server error',
+      code: error.code ?? 'ERR_INTERNAL',
+      message: error.message
+    }));
   }
 }).listen(port, () => {
   console.log(`CHRVA migration API listening at http://localhost:${port}`);
 });
-
-function filterClubs(params) {
-  return clubs.filter((club) => {
-    return startsWith(club.clubName, params.get('clubName')) &&
-      startsWith(club.contactFirstName, params.get('contactFirstName')) &&
-      startsWith(club.contactLastName, params.get('contactLastName')) &&
-      startsWith(club.state, params.get('state'));
-  });
-}
-
-function filterTournaments(params) {
-  return tournaments.filter((tournament) => {
-    return startsWith(tournament.division, params.get('division')) &&
-      startsWith(tournament.host, params.get('host')) &&
-      startsWith(tournament.name, params.get('name'));
-  });
-}
-
-function startsWith(value, filter) {
-  if (!filter) {
-    return true;
-  }
-  return String(value ?? '').toLowerCase().startsWith(String(filter).toLowerCase());
-}
 
 async function migrationInventory() {
   const path = join(mirrorRoot, '.migration', 'cfml-route-inventory.json');

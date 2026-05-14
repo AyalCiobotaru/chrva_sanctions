@@ -4,9 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node --env-file=.env.prod server.mjs",
+    "start:test": "node --env-file=.env.test server.mjs",
+    "start:prod": "node --env-file=.env.prod server.mjs",
+    "beekeeper:prod": "node --env-file=.env.prod scripts/create-beekeeper-connection.mjs",
+    "inspect:test": "node --env-file=.env.test scripts/inspect-db.mjs",
+    "inspect:prod": "node --env-file=.env.prod scripts/inspect-db.mjs",
+    "inspect:tournaments": "node --env-file=.env.prod scripts/inspect-tournaments.mjs"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "mssql": "^12.5.3"
   }
 }

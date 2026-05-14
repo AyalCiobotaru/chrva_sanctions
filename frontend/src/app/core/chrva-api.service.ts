@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import {
   ClubSearch,
   ClubSummary,
+  CoordinatorSearch,
+  CoordinatorSummary,
   LegacyConfig,
   MigrationInventory,
   TournamentSearch,
@@ -11,7 +13,7 @@ import {
 } from './api.models';
 
 @Injectable({ providedIn: 'root' })
-export class LegacyApiService {
+export class ChrvaApiService {
   private readonly baseUrl = '/api';
 
   constructor(private readonly http: HttpClient) {}
@@ -22,6 +24,12 @@ export class LegacyApiService {
 
   searchClubs(search: ClubSearch): Observable<ClubSummary[]> {
     return this.http.get<ClubSummary[]>(`${this.baseUrl}/clubs`, {
+      params: this.toParams(search)
+    });
+  }
+
+  searchCoordinators(search: CoordinatorSearch): Observable<CoordinatorSummary[]> {
+    return this.http.get<CoordinatorSummary[]>(`${this.baseUrl}/coordinators`, {
       params: this.toParams(search)
     });
   }

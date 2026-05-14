@@ -1,6 +1,6 @@
 import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
-import { LegacyApiService } from '../../core/legacy-api.service';
+import { ChrvaApiService } from '../../core/chrva-api.service';
 
 @Component({
   selector: 'app-migration-page',
@@ -84,5 +84,5 @@ import { LegacyApiService } from '../../core/legacy-api.service';
 export class MigrationPageComponent {
   readonly inventory$ = this.api.getMigrationInventory();
 
-  constructor(private readonly api: LegacyApiService) {}
+  constructor(private readonly api: ChrvaApiService) {}
 }

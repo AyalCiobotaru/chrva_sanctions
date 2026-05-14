@@ -6,27 +6,40 @@ the FTP mirror and must not be uploaded to the legacy FTP server.
 ## What Exists Now
 
 - `frontend/`: Angular 21 standalone application shell with routes for Overview,
-  Clubs, Tournaments, and Migration Inventory.
-- `api/`: dependency-free Node API stub that exposes the first migration
+  Clubs, Coordinators, Tournaments, and Migration Inventory.
+- `api/`: Node API using SQL Server read models for the first migration
   contracts:
   - `GET /api/health`
   - `GET /api/config`
   - `GET /api/clubs`
+  - `GET /api/coordinators`
   - `GET /api/tournaments`
   - `GET /api/migration/inventory`
 
-## First Migrated Slice
+## First Data Slice
 
-The first slice maps these ColdFusion pages:
+The first data slice exposes clubs, coordinators, and tournaments from SQL
+Server through API contracts. The modern app does not read configuration from
+the mirrored server-rendered application.
 
-- `contacts_clubs/clubs_search.CFM`
-- `contacts_clubs/clubs_results.CFM`
-- `contacts_clubs/clubs_detail.CFM`
-- `tournadmin/tourn_findDetail112016.CFM`
-- `tournadmin/tourn_findDetailResults.CFM`
+Runtime configuration comes from environment files:
 
-The API currently returns fixtures for clubs and tournaments. The next step is
-to connect the API to the legacy database and preserve the CFML filters.
+- `.env.test` for test
+- `.env.prod` for production
+
+The checked-in `.env.*.example` files document the required variables:
+
+- `CHRVA_DB_HOST`
+- `CHRVA_DB_NAME`
+- `CHRVA_DB_USER`
+- `CHRVA_DB_PASSWORD`
+- `CHRVA_DB_ENCRYPT`
+- `CHRVA_DB_TRUST_SERVER_CERT`
+- `CHRVA_PREVIOUS_SEASON`
+- `CHRVA_CURRENT_SEASON`
+- `CHRVA_NEXT_SEASON`
+- `CHRVA_SEASON_STATUS`
+- `CHRVA_SANCTION_STATUS`
 
 ## Run Locally
 
@@ -34,7 +47,14 @@ From `modernized/api`:
 
 ```powershell
 npm start
+npm run start:test
+npm run start:prod
 ```
+
+Create `.env.test` and `.env.prod` from their example files before starting the
+API. Those real environment files are ignored by git. `npm start` uses the prod
+environment by default; use `npm run start:test` when the test database
+credentials are available.
 
 From `modernized/frontend`, after installing dependencies:
 

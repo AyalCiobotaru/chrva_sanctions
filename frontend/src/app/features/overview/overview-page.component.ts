@@ -1,6 +1,6 @@
 import { AsyncPipe, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
-import { LegacyApiService } from '../../core/legacy-api.service';
+import { ChrvaApiService } from '../../core/chrva-api.service';
 
 @Component({
   selector: 'app-overview-page',
@@ -12,14 +12,14 @@ import { LegacyApiService } from '../../core/legacy-api.service';
         <p class="eyebrow">Migration Slice 1</p>
         <h1>Public clubs and tournaments</h1>
         <p>
-          The current ColdFusion application is a page-controller app:
-          CFML pages render HTML directly, run SQL through shared datasource
-          variables, and carry state through ColdFusion sessions.
+          The modern application is now configured through explicit API
+          environments. Angular reads data contracts from the API and does not
+          read or link back to the prior server-rendered application.
         </p>
       </div>
 
       <aside *ngIf="config$ | async as config" class="panel">
-        <h2>Legacy Season State</h2>
+        <h2>Season State</h2>
         <dl>
           <dt>Previous</dt>
           <dd>{{ config.previousSeason }}</dd>
@@ -39,24 +39,23 @@ import { LegacyApiService } from '../../core/legacy-api.service';
       <article>
         <h2>What moved first</h2>
         <p>
-          This shell maps the legacy club-contact and tournament search pages
-          into Angular routes backed by API contracts. The API currently returns
-          fixtures until real database connectivity is wired in.
+          Clubs, coordinators, and tournament searches are Angular routes backed
+          by SQL Server API contracts.
         </p>
       </article>
       <article>
-        <h2>ColdFusion responsibilities</h2>
+        <h2>API responsibilities</h2>
         <p>
-          SQL, session/auth, redirects, mail, and form validation belong in the
-          backend API. Angular owns navigation, views, forms, and client-side
+          SQL access, authentication, mail, exports, and validation belong in
+          the backend API. Angular owns navigation, views, forms, and client-side
           validation.
         </p>
       </article>
       <article>
         <h2>Next migration target</h2>
         <p>
-          Replace the mock club and tournament data with database-backed API
-          queries that preserve the filtering behavior from the CFML pages.
+          Continue replacing public read-only workflows with explicit API
+          contracts before moving into authenticated administrative tools.
         </p>
       </article>
     </section>
@@ -130,5 +129,5 @@ import { LegacyApiService } from '../../core/legacy-api.service';
 export class OverviewPageComponent {
   readonly config$ = this.api.getConfig();
 
-  constructor(private readonly api: LegacyApiService) {}
+  constructor(private readonly api: ChrvaApiService) {}
 }

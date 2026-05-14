@@ -13,6 +13,7 @@ export class AppComponent {
   readonly navItems = [
     { path: '/', label: 'Overview' },
     { path: '/clubs', label: 'Clubs' },
+    { path: '/coordinators', label: 'Coordinators' },
     { path: '/tournaments', label: 'Tournaments' },
     { path: '/migration', label: 'Migration' }
   ];

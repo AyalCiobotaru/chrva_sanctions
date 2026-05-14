@@ -1,24 +1,33 @@
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe, CurrencyPipe, NgFor, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { startWith, switchMap } from 'rxjs';
+import { startWith, switchMap, tap } from 'rxjs';
 import { TournamentSearch } from '../../core/api.models';
-import { LegacyApiService } from '../../core/legacy-api.service';
+import { ChrvaApiService } from '../../core/chrva-api.service';
 
 @Component({
   selector: 'app-tournaments-page',
   standalone: true,
-  imports: [AsyncPipe, NgFor, NgIf, ReactiveFormsModule],
+  imports: [AsyncPipe, CurrencyPipe, NgFor, NgIf, ReactiveFormsModule],
   template: `
     <section class="page-header">
       <div>
-        <p class="eyebrow">Legacy source: tournadmin</p>
         <h1>Tournaments</h1>
-        <p>Angular replacement for tourn_findDetail*.CFM and tourn_findDetailResults.CFM.</p>
+        <p>Search AES tournament requests by season, program, division, host, and name.</p>
       </div>
     </section>
 
     <form [formGroup]="form" class="filters">
+      <label>
+        Season
+        <select formControlName="season">
+          <ng-container *ngIf="config$ | async as config">
+            <option [value]="config.previousSeason">{{ config.previousSeason }}</option>
+            <option [value]="config.currentSeason">{{ config.currentSeason }}</option>
+            <option [value]="config.nextSeason">{{ config.nextSeason }}</option>
+          </ng-container>
+        </select>
+      </label>
       <label>
         Program
         <select formControlName="program">
@@ -39,36 +48,55 @@ import { LegacyApiService } from '../../core/legacy-api.service';
         Name
         <input formControlName="name" />
       </label>
+      <label>
+        Has notes
+        <input type="checkbox" formControlName="hasNotes" />
+      </label>
+      <label>
+        Not posted
+        <input type="checkbox" formControlName="notPosted" />
+      </label>
     </form>
 
     <table *ngIf="tournaments$ | async as tournaments">
       <thead>
         <tr>
-          <th>Level</th>
+          <th>AES</th>
           <th>Date</th>
-          <th>Entry Form</th>
+          <th>Tournament</th>
           <th>Host</th>
-          <th>Teams</th>
+          <th>Spots / Min</th>
           <th>Site</th>
-          <th>Close</th>
+          <th>Payment</th>
           <th>Priority</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let tournament of tournaments">
           <td>
-            <strong>{{ tournament.division }}</strong>
-            <small>{{ tournament.type }}</small>
+            {{ tournament.addedToAesDate ?? 'Not posted' }}
+            <small>{{ tournament.okToPay ? 'Okay to pay' : '' }}</small>
           </td>
           <td>{{ tournament.date }}</td>
           <td>
             {{ tournament.name }}
-            <small>{{ tournament.uniqueId }}</small>
+            <small>{{ tournament.division }} &middot; {{ tournament.type }} &middot; {{ tournament.uniqueId }}</small>
+            <small *ngIf="tournament.startTime">Start {{ tournament.startTime }}</small>
           </td>
-          <td>{{ tournament.host }}</td>
-          <td>{{ tournament.teamCount ?? 'TBD' }}</td>
-          <td>{{ tournament.site }}</td>
-          <td>{{ tournament.closeDate ?? 'TBD' }}</td>
+          <td>
+            {{ tournament.host }}
+            <small>{{ tournament.clubName || tournament.clubCode }}</small>
+          </td>
+          <td>{{ tournament.teamCount ?? 'TBD' }} / {{ tournament.minimumTeamCount ?? 'TBD' }}</td>
+          <td>
+            {{ tournament.site }}
+            <small>{{ tournament.siteAddress }}</small>
+          </td>
+          <td>
+            {{ tournament.paymentType || 'TBD' }}
+            <small>{{ tournament.checkPayableTo }}</small>
+            <small *ngIf="tournament.fee !== null">{{ tournament.fee | currency }}</small>
+          </td>
           <td>{{ tournament.priority ?? '' }}</td>
         </tr>
       </tbody>
@@ -102,7 +130,7 @@ import { LegacyApiService } from '../../core/legacy-api.service';
       border-radius: 6px;
       display: grid;
       gap: 16px;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr)) repeat(2, max-content);
       margin-bottom: 20px;
       padding: 18px;
     }
@@ -121,6 +149,13 @@ import { LegacyApiService } from '../../core/legacy-api.service';
       border-radius: 4px;
       font: inherit;
       padding: 9px 10px;
+    }
+
+    input[type="checkbox"] {
+      height: 20px;
+      justify-self: start;
+      padding: 0;
+      width: 20px;
     }
 
     table {
@@ -159,19 +194,38 @@ import { LegacyApiService } from '../../core/legacy-api.service';
 })
 export class TournamentsPageComponent {
   readonly form = this.fb.nonNullable.group({
+    season: '2027',
     program: 'jr' as const,
     division: '',
     host: '',
-    name: ''
+    name: '',
+    hasNotes: false,
+    notPosted: false
   });
+
+  readonly config$ = this.api.getConfig().pipe(
+    tap((config) => this.form.controls.season.setValue(config.currentSeason))
+  );
 
   readonly tournaments$ = this.form.valueChanges.pipe(
     startWith(this.form.getRawValue()),
-    switchMap((search) => this.api.searchTournaments(search as TournamentSearch))
+    switchMap((search) => this.api.searchTournaments(this.toSearch(search)))
   );
 
   constructor(
-    private readonly api: LegacyApiService,
+    private readonly api: ChrvaApiService,
     private readonly fb: FormBuilder
   ) {}
+
+  private toSearch(search: typeof this.form.value): TournamentSearch {
+    return {
+      season: search.season,
+      program: search.program ?? 'jr',
+      division: search.division,
+      host: search.host,
+      name: search.name,
+      hasNotes: search.hasNotes ? 'true' : '',
+      notPosted: search.notPosted ? 'true' : ''
+    };
+  }
 }
