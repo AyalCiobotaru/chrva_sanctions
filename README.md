@@ -30,6 +30,7 @@ Runtime configuration comes from environment files:
 The checked-in `.env.*.example` files document the required variables:
 
 - `CHRVA_DB_HOST`
+- `CHRVA_DB_PORT`
 - `CHRVA_DB_NAME`
 - `CHRVA_DB_USER`
 - `CHRVA_DB_PASSWORD`
@@ -67,3 +68,16 @@ Angular 21 requires Node `^20.19.0 || ^22.12.0 || >=24.0.0`.
 
 The Angular app expects API requests under `/api`. During development, add a
 proxy or serve both apps behind the same local host.
+
+## Local SQL Server
+
+Local SQL Server setup lives in `db/`. It starts with only the tables the
+modern Angular/API app currently needs:
+
+- `clubcontacts`
+- `coordcontacts`
+- `sanction_requested`
+
+Use `db/docker/start-sqlserver.ps1` to run SQL Server Developer Edition in
+Docker, then apply the table scripts from `db/tables/`. Add more table scripts
+only when a modern feature starts using that table.

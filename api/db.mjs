@@ -217,6 +217,7 @@ async function getPool() {
 async function readDbConfig() {
   return {
     server: requireEnv('CHRVA_DB_HOST'),
+    port: Number(process.env.CHRVA_DB_PORT ?? 1433),
     database: requireEnv('CHRVA_DB_NAME'),
     user: requireEnv('CHRVA_DB_USER'),
     password: requireEnv('CHRVA_DB_PASSWORD'),
