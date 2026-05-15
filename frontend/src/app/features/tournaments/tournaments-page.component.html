@@ -9,10 +9,10 @@
   <label>
     Season
     <select formControlName="season">
-      @if (config$ | async; as config) {
-        <option [value]="config.previousSeason">{{ config.previousSeason }}</option>
-        <option [value]="config.currentSeason">{{ config.currentSeason }}</option>
-        <option [value]="config.nextSeason">{{ config.nextSeason }}</option>
+      @if (seasonOptions$ | async; as seasons) {
+        @for (season of seasons; track season) {
+          <option [value]="season">{{ season }}</option>
+        }
       }
     </select>
   </label>

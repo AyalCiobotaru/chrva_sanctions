@@ -1,7 +1,7 @@
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { merge, startWith, Subject, switchMap, tap } from 'rxjs';
+import { map, merge, startWith, Subject, switchMap, tap } from 'rxjs';
 import { getHttpErrorMessage } from '../../core/http-error';
 import { TournamentSearch } from '../../core/api.models';
 import { ChrvaApiService } from '../../core/chrva-api.service';
@@ -16,6 +16,8 @@ import { InlineDateFieldComponent } from '../../util/inline-date-field/inline-da
   styleUrl: './tournaments-page.component.scss'
 })
 export class TournamentsPageComponent {
+  private readonly firstLegacySeason = 2016;
+
   readonly savingAddedToAes = new Set<string>();
   readonly addedToAesErrors = new Map<string, string>();
   readonly savingOkToPay = new Set<string>();
@@ -33,6 +35,9 @@ export class TournamentsPageComponent {
 
   readonly config$ = this.api.getConfig().pipe(
     tap((config) => this.form.controls.season.setValue(config.currentSeason))
+  );
+  readonly seasonOptions$ = this.config$.pipe(
+    map((config) => this.buildSeasonOptions(Number(config.nextSeason || config.currentSeason)))
   );
 
   private readonly refresh$ = new Subject<void>();
@@ -89,5 +94,16 @@ export class TournamentsPageComponent {
       hasNotes: search.hasNotes ? 'true' : '',
       notPosted: search.notPosted ? 'true' : ''
     };
+  }
+
+  private buildSeasonOptions(latestSeason: number): string[] {
+    const latest = Number.isFinite(latestSeason) ? latestSeason : new Date().getFullYear();
+    const seasons = [];
+
+    for (let season = latest; season >= this.firstLegacySeason; season -= 1) {
+      seasons.push(String(season));
+    }
+
+    return seasons;
   }
 }
