@@ -10,7 +10,8 @@ import {
   searchClubs,
   searchCoordinators,
   sendClubEmailBroadcast,
-  searchTournaments
+  searchTournaments,
+  updateClub
 } from './db.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -36,6 +37,11 @@ createServer(async (request, response) => {
 
     if (route === 'POST /api/clubs') {
       return json(response, await createClub(await readJson(request)), 201);
+    }
+
+    if (request.method === 'PUT' && url.pathname.startsWith('/api/clubs/')) {
+      const clubCode = decodeURIComponent(url.pathname.slice('/api/clubs/'.length));
+      return json(response, await updateClub(clubCode, await readJson(request)));
     }
 
     if (route === 'GET /api/clubs/export') {
@@ -72,7 +78,7 @@ createServer(async (request, response) => {
     });
     response.writeHead(status, { 'content-type': 'application/json' });
     response.end(JSON.stringify({
-      error: status === 503 ? 'Database unavailable' : status === 400 || status === 409 ? error.message : 'Internal server error',
+      error: status === 503 ? 'Database unavailable' : [400, 404, 409].includes(status) ? error.message : 'Internal server error',
       code: error.code ?? 'ERR_INTERNAL',
       message: error.message
     }));

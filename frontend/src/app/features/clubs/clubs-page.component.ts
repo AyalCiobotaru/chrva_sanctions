@@ -2,14 +2,17 @@ import { AsyncPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { merge, startWith, Subject, switchMap } from 'rxjs';
-import { ClubEmailBroadcast, ClubEmailRecipient, ClubSearch, NewClubRequest } from '../../core/api.models';
+import { ClubEmailBroadcast, ClubEmailRecipient, ClubSearch, ClubSummary, NewClubRequest } from '../../core/api.models';
 import { ChrvaApiService } from '../../core/chrva-api.service';
+import { getHttpErrorMessage } from '../../core/http-error';
+import { ClubFormComponent } from './club-form/club-form.component';
+import { ModalComponent } from '../../util/modal/modal.component';
 import { RichTextEditorComponent } from '../../util/rich-text-editor/rich-text-editor.component';
 
 @Component({
   selector: 'app-clubs-page',
   standalone: true,
-  imports: [AsyncPipe, ReactiveFormsModule, RichTextEditorComponent],
+  imports: [AsyncPipe, ClubFormComponent, ModalComponent, ReactiveFormsModule, RichTextEditorComponent],
   templateUrl: './clubs-page.component.html',
   styleUrl: './clubs-page.component.scss'
 })
@@ -18,6 +21,7 @@ export class ClubsPageComponent {
 
   showAddClub = false;
   showEmailBroadcast = false;
+  editingClub: ClubSummary | null = null;
   addError = '';
   emailBroadcast?: ClubEmailBroadcast;
   emailError = '';
@@ -28,26 +32,6 @@ export class ClubsPageComponent {
     clubName: '',
     state: '',
     meetingNoShows: false
-  });
-
-  readonly addForm = this.fb.nonNullable.group({
-    clubCode: ['', [Validators.required, Validators.maxLength(5)]],
-    clubName: ['', Validators.required],
-    contactFirstName: ['', Validators.required],
-    contactLastName: ['', Validators.required],
-    address1: ['', Validators.required],
-    address2: '',
-    city: ['', Validators.required],
-    state: ['', [Validators.required, Validators.maxLength(2)]],
-    zip: ['', Validators.required],
-    phone1: ['', Validators.required],
-    phone2: '',
-    email: ['', [Validators.required, Validators.email]],
-    alternateEmail: '',
-    website: '',
-    clubType: 'G',
-    active: true,
-    comments: ''
   });
 
   readonly emailForm = this.fb.nonNullable.group({
@@ -77,6 +61,24 @@ export class ClubsPageComponent {
     window.location.href = '/api/clubs/export';
   }
 
+  openNewClub(): void {
+    this.addError = '';
+    this.editingClub = null;
+    this.showAddClub = true;
+  }
+
+  closeClubForm(): void {
+    this.addError = '';
+    this.editingClub = null;
+    this.showAddClub = false;
+  }
+
+  editClub(club: ClubSummary): void {
+    this.addError = '';
+    this.editingClub = club;
+    this.showAddClub = true;
+  }
+
   openEmailBroadcast(): void {
     this.showEmailBroadcast = !this.showEmailBroadcast;
 
@@ -97,7 +99,7 @@ export class ClubsPageComponent {
         }
       },
       error: (error) => {
-        this.emailError = error.error?.message ?? 'Unable to load club director email list.';
+        this.emailError = getHttpErrorMessage(error, 'Unable to load club director email list.');
       }
     });
   }
@@ -135,51 +137,24 @@ export class ClubsPageComponent {
         this.emailStatus = result.message;
       },
       error: (error) => {
-        this.emailError = error.error?.message ?? 'Unable to send club director email.';
+        this.emailError = getHttpErrorMessage(error, 'Unable to send club director email.');
       }
     });
   }
 
-  saveClub(): void {
-    if (this.addForm.invalid) {
-      this.addForm.markAllAsTouched();
-      return;
-    }
-
+  saveClub(club: NewClubRequest): void {
     this.addError = '';
-    const raw = this.addForm.getRawValue();
-    const club: NewClubRequest = {
-      ...raw,
-      clubCode: raw.clubCode.toUpperCase(),
-      state: raw.state.toUpperCase()
-    };
+    const request = this.editingClub
+      ? this.api.updateClub(this.editingClub.clubCode, club)
+      : this.api.createClub(club);
 
-    this.api.createClub(club).subscribe({
+    request.subscribe({
       next: () => {
-        this.addForm.reset({
-          clubCode: '',
-          clubName: '',
-          contactFirstName: '',
-          contactLastName: '',
-          address1: '',
-          address2: '',
-          city: '',
-          state: '',
-          zip: '',
-          phone1: '',
-          phone2: '',
-          email: '',
-          alternateEmail: '',
-          website: '',
-          clubType: 'G',
-          active: true,
-          comments: ''
-        });
-        this.showAddClub = false;
+        this.closeClubForm();
         this.refresh$.next();
       },
       error: (error) => {
-        this.addError = error.error?.message ?? 'Unable to save club.';
+        this.addError = getHttpErrorMessage(error, 'Unable to save club.');
       }
     });
   }

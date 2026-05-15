@@ -18,6 +18,8 @@ export interface ClubSummary {
   clubName: string;
   contactFirstName: string;
   contactLastName: string;
+  address1: string;
+  address2: string;
   address: string;
   city: string;
   state: string;
@@ -29,6 +31,7 @@ export interface ClubSummary {
   alternateEmail: string;
   active: boolean;
   clubType: string;
+  comments: string;
   attendedMeeting: boolean;
   previousNoShowFlag: boolean;
   acknowledged: boolean;

@@ -45,13 +45,16 @@ button.secondary {
   color: #27384c;
 }
 
+button.compact {
+  padding: 6px 9px;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
 .filters,
-.add-form,
 .email-form {
   background: #ffffff;
   border: 1px solid #d9e1ec;
@@ -66,14 +69,10 @@ button:disabled {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.add-form,
 .email-form {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.add-form h2,
-.add-form .error,
-.add-form .form-actions,
 .email-form h2,
 .email-form .error,
 .email-form .notice,
@@ -207,6 +206,10 @@ small {
   padding: 0;
 }
 
+.table-actions {
+  white-space: nowrap;
+}
+
 .empty {
   background: #ffffff;
   border: 1px solid #d9e1ec;
@@ -224,7 +227,6 @@ small {
   }
 
   .filters,
-  .add-form,
   .email-form,
   .recipient-list {
     grid-template-columns: 1fr;

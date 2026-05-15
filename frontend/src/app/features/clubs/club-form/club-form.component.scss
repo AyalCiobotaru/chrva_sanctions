@@ -1,0 +1,93 @@
+.club-form {
+  background: transparent;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+}
+
+h2 {
+  margin: 0 44px 8px 0;
+}
+
+.club-form h2,
+.club-form .error,
+.club-form .form-actions,
+.wide {
+  grid-column: 1 / -1;
+}
+
+label {
+  color: #34465c;
+  display: grid;
+  font-size: 13px;
+  font-weight: 700;
+  gap: 6px;
+}
+
+label.checkbox {
+  align-content: end;
+  grid-template-columns: max-content 1fr;
+  gap: 8px;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #bcc8d6;
+  border-radius: 4px;
+  font: inherit;
+  padding: 9px 10px;
+}
+
+input[readonly] {
+  background: #f3f6fa;
+  color: #526071;
+}
+
+input[type="checkbox"] {
+  height: 20px;
+  padding: 0;
+  width: 20px;
+}
+
+button {
+  background: #27384c;
+  border: 1px solid #27384c;
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 9px 12px;
+}
+
+button.secondary {
+  background: #ffffff;
+  color: #27384c;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.error {
+  color: #9f1d1d;
+  font-weight: 700;
+  margin: 0;
+}
+
+@media (max-width: 980px) {
+  .club-form {
+    grid-template-columns: 1fr;
+  }
+}

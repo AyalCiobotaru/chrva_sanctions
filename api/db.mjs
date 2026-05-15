@@ -54,6 +54,7 @@ export async function searchClubs(filters) {
       email,
       altEmail,
       club_web_page,
+      comments,
       active,
       clubType,
       inAttendance2024,
@@ -166,6 +167,80 @@ export async function createClub(body) {
         @clubType,
         @active
       )
+    `);
+
+  return getClubByCode(club.clubCode);
+}
+
+export async function updateClub(clubCode, body) {
+  const pool = await getPool();
+  const club = {
+    ...normalizeClubInput(body),
+    clubCode: text(clubCode).toUpperCase()
+  };
+  const errors = validateClub(club);
+
+  if (errors.length > 0) {
+    const error = new Error(errors.join(' '));
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const existing = await pool.request()
+    .input('clubCode', sql.NVarChar, club.clubCode)
+    .query("select ClubCode from clubcontacts where ClubCode = @clubCode and grouping = 'Juniors'");
+
+  if (existing.recordset.length === 0) {
+    const error = new Error('Club was not found.');
+    error.statusCode = 404;
+    error.code = 'ERR_CLUB_NOT_FOUND';
+    throw error;
+  }
+
+  await pool.request()
+    .input('clubCode', sql.NVarChar, club.clubCode)
+    .input('clubName', sql.NVarChar, club.clubName)
+    .input('contactFirstName', sql.NVarChar, club.contactFirstName)
+    .input('contactLastName', sql.NVarChar, club.contactLastName)
+    .input('address1', sql.NVarChar, club.address1)
+    .input('address2', sql.NVarChar, club.address2)
+    .input('city', sql.NVarChar, club.city)
+    .input('state', sql.NVarChar, club.state)
+    .input('zip', sql.NVarChar, club.zip)
+    .input('phone1', sql.NVarChar, club.phone1)
+    .input('phone2', sql.NVarChar, club.phone2)
+    .input('extension', sql.NVarChar, club.extension)
+    .input('fax', sql.NVarChar, club.fax)
+    .input('website', sql.NVarChar, club.website)
+    .input('email', sql.NVarChar, club.email)
+    .input('alternateEmail', sql.NVarChar, club.alternateEmail)
+    .input('comments', sql.NVarChar, club.comments)
+    .input('clubType', sql.NVarChar, club.clubType)
+    .input('active', sql.NChar, club.active)
+    .query(`
+      update clubcontacts
+      set
+        ClubName = @clubName,
+        contactFname = @contactFirstName,
+        contactLname = @contactLastName,
+        straddress1 = @address1,
+        straddress2 = @address2,
+        city = @city,
+        st = @state,
+        zip = @zip,
+        phone1 = @phone1,
+        ext = @extension,
+        phone2 = @phone2,
+        fax = @fax,
+        club_web_page = @website,
+        email = @email,
+        altEmail = @alternateEmail,
+        comments = @comments,
+        clubType = @clubType,
+        active = @active
+      where ClubCode = @clubCode
+        and grouping = 'Juniors'
     `);
 
   return getClubByCode(club.clubCode);
@@ -387,6 +462,7 @@ async function getClubByCode(clubCode) {
         email,
         altEmail,
         club_web_page,
+        comments,
         active,
         clubType,
         inAttendance2024,
@@ -405,6 +481,8 @@ function mapClub(row) {
     clubName: text(row.ClubName),
     contactFirstName: text(row.contactFname),
     contactLastName: text(row.contactLname),
+    address1: text(row.straddress1),
+    address2: text(row.straddress2),
     address: [row.straddress1, row.straddress2, row.city].map(text).filter(Boolean).join(', '),
     city: text(row.city),
     state: text(row.st),
@@ -416,6 +494,7 @@ function mapClub(row) {
     alternateEmail: text(row.altEmail),
     active: text(row.active) !== 'N',
     clubType: text(row.clubType),
+    comments: text(row.comments),
     attendedMeeting: text(row.inAttendance2024) === 'Yes',
     previousNoShowFlag: row.inAttendance2023 == null,
     acknowledged: text(row.acknowledge) === 'Yes'
@@ -653,7 +732,6 @@ function validateClub(club) {
     ['clubName', 'Club Name'],
     ['contactFirstName', 'Contact First Name'],
     ['contactLastName', 'Contact Last Name'],
-    ['address1', 'Street Address 1'],
     ['city', 'City'],
     ['state', 'State'],
     ['zip', 'Zip'],

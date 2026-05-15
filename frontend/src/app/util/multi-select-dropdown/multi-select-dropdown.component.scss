@@ -1,0 +1,91 @@
+.multi-select {
+  display: grid;
+  gap: 6px;
+  position: relative;
+}
+
+.field-label {
+  color: #34465c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.trigger {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #bcc8d6;
+  border-radius: 4px;
+  color: #1f2937;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-weight: 400;
+  gap: 8px;
+  justify-content: space-between;
+  min-height: 39px;
+  overflow: hidden;
+  padding: 9px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.trigger span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trigger.placeholder {
+  color: #718093;
+}
+
+.trigger:disabled {
+  background: #f3f6fa;
+  cursor: not-allowed;
+}
+
+.chevron {
+  color: #526071;
+  flex: 0 0 auto;
+}
+
+.menu {
+  background: #ffffff;
+  border: 1px solid #bcc8d6;
+  border-radius: 4px;
+  box-shadow: 0 10px 24px rgba(20, 29, 43, 0.16);
+  display: grid;
+  left: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 4px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+}
+
+.option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  color: #1f2937;
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 8px;
+  grid-template-columns: 18px 1fr;
+  padding: 8px;
+  text-align: left;
+}
+
+.option:hover {
+  background: #edf2f7;
+}
+
+.checkmark {
+  color: #245c37;
+  font-weight: 700;
+  text-align: center;
+}

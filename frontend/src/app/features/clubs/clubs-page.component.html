@@ -4,8 +4,8 @@
     <p>Manage junior club contacts, meeting attendance, and directory exports.</p>
   </div>
   <div class="actions">
-    <button type="button" (click)="showAddClub = !showAddClub">
-      {{ showAddClub ? 'Close' : 'Add a New Club' }}
+    <button type="button" (click)="openNewClub()">
+      Add a New Club
     </button>
     <button type="button" [class.active]="showEmailBroadcast" (click)="openEmailBroadcast()">
       Email All Club Directors
@@ -18,89 +18,14 @@
 </section>
 
 @if (showAddClub) {
-  <form [formGroup]="addForm" class="add-form" (ngSubmit)="saveClub()">
-    <h2>Add New Club</h2>
-    @if (addError) {
-      <p class="error">{{ addError }}</p>
-    }
-    <label>
-      Club Code *
-      <input formControlName="clubCode" maxlength="5" />
-    </label>
-    <label>
-      Club Name *
-      <input formControlName="clubName" maxlength="50" />
-    </label>
-    <label>
-      Contact First Name *
-      <input formControlName="contactFirstName" maxlength="25" />
-    </label>
-    <label>
-      Contact Last Name *
-      <input formControlName="contactLastName" maxlength="50" />
-    </label>
-    <label>
-      Address Line 1 *
-      <input formControlName="address1" maxlength="50" />
-    </label>
-    <label>
-      Address Line 2
-      <input formControlName="address2" maxlength="50" />
-    </label>
-    <label>
-      City *
-      <input formControlName="city" maxlength="30" />
-    </label>
-    <label>
-      State *
-      <input formControlName="state" maxlength="2" />
-    </label>
-    <label>
-      Zip *
-      <input formControlName="zip" maxlength="10" />
-    </label>
-    <label>
-      Phone 1 *
-      <input formControlName="phone1" maxlength="15" />
-    </label>
-    <label>
-      Phone 2
-      <input formControlName="phone2" maxlength="15" />
-    </label>
-    <label>
-      Email *
-      <input formControlName="email" maxlength="50" />
-    </label>
-    <label>
-      Alternate Email
-      <input formControlName="alternateEmail" maxlength="50" />
-    </label>
-    <label>
-      Website
-      <input formControlName="website" maxlength="100" />
-    </label>
-    <label>
-      Club Type
-      <select formControlName="clubType">
-        <option value="G">Girls</option>
-        <option value="B">Boys</option>
-        <option value="O">Outdoor</option>
-        <option value="A">Adult</option>
-      </select>
-    </label>
-    <label class="checkbox">
-      <input type="checkbox" formControlName="active" />
-      Active
-    </label>
-    <label class="wide">
-      Comments
-      <textarea formControlName="comments" rows="3"></textarea>
-    </label>
-    <div class="form-actions">
-      <button type="submit" [disabled]="addForm.invalid">Save</button>
-      <button type="button" class="secondary" (click)="showAddClub = false">Cancel</button>
-    </div>
-  </form>
+  <app-modal (closed)="closeClubForm()">
+    <app-club-form
+      [club]="editingClub"
+      [error]="addError"
+      (saved)="saveClub($event)"
+      (cancelled)="closeClubForm()"
+    ></app-club-form>
+  </app-modal>
 }
 
 @if (showEmailBroadcast) {
@@ -208,6 +133,7 @@
         <th>State</th>
         <th>Phone</th>
         <th>Web Page</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -250,6 +176,9 @@
                 Website
               </a>
             }
+          </td>
+          <td class="table-actions">
+            <button type="button" class="secondary compact" (click)="editClub(club)">Edit</button>
           </td>
         </tr>
       }

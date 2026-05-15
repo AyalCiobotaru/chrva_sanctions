@@ -1,0 +1,33 @@
+.error-banner {
+  align-items: center;
+  background: #fff1f1;
+  border: 1px solid #d58c8c;
+  border-radius: 6px;
+  color: #7f1d1d;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 12px 28px;
+}
+
+button {
+  background: #ffffff;
+  border: 1px solid #d58c8c;
+  border-radius: 4px;
+  color: #7f1d1d;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 6px 9px;
+}
+
+@media (max-width: 760px) {
+  .error-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    margin: 0 16px;
+    padding: 12px;
+  }
+}

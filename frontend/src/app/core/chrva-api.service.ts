@@ -37,6 +37,10 @@ export class ChrvaApiService {
     return this.http.post<ClubSummary>(`${this.baseUrl}/clubs`, club);
   }
 
+  updateClub(clubCode: string, club: NewClubRequest): Observable<ClubSummary> {
+    return this.http.put<ClubSummary>(`${this.baseUrl}/clubs/${encodeURIComponent(clubCode)}`, club);
+  }
+
   getClubEmailBroadcast(clubType = 'R'): Observable<ClubEmailBroadcast> {
     return this.http.get<ClubEmailBroadcast>(`${this.baseUrl}/clubs/email-broadcast`, {
       params: new HttpParams().set('clubType', clubType)

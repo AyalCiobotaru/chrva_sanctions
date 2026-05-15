@@ -1,0 +1,84 @@
+<form [formGroup]="form" class="club-form" (ngSubmit)="submit()">
+  <h2>{{ isEditing ? 'Edit Club' : 'Add New Club' }}</h2>
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+  @if (validationError) {
+    <p class="error">{{ validationError }}</p>
+  }
+
+  <label>
+    Club Code *
+    <input formControlName="clubCode" maxlength="5" [readonly]="isEditing" />
+  </label>
+  <label>
+    Club Name *
+    <input formControlName="clubName" maxlength="50" />
+  </label>
+  <label>
+    Contact First Name *
+    <input formControlName="contactFirstName" maxlength="25" />
+  </label>
+  <label>
+    Contact Last Name *
+    <input formControlName="contactLastName" maxlength="50" />
+  </label>
+  <label>
+    Address Line 1
+    <input formControlName="address1" maxlength="50" />
+  </label>
+  <label>
+    Address Line 2
+    <input formControlName="address2" maxlength="50" />
+  </label>
+  <label>
+    City *
+    <input formControlName="city" maxlength="30" />
+  </label>
+  <label>
+    State *
+    <input formControlName="state" maxlength="2" />
+  </label>
+  <label>
+    Zip *
+    <input formControlName="zip" maxlength="10" />
+  </label>
+  <label>
+    Phone 1 *
+    <input formControlName="phone1" maxlength="15" />
+  </label>
+  <label>
+    Phone 2
+    <input formControlName="phone2" maxlength="15" />
+  </label>
+  <label>
+    Email *
+    <input formControlName="email" maxlength="50" />
+  </label>
+  <label>
+    Alternate Email
+    <input formControlName="alternateEmail" maxlength="50" />
+  </label>
+  <label>
+    Website
+    <input formControlName="website" maxlength="100" />
+  </label>
+  <app-multi-select-dropdown
+    formControlName="clubTypes"
+    label="Club Type"
+    [options]="clubTypeOptions"
+  ></app-multi-select-dropdown>
+  <label class="checkbox">
+    <input type="checkbox" formControlName="active" />
+    Active
+  </label>
+  <label class="wide">
+    Comments
+    <textarea formControlName="comments" rows="3"></textarea>
+  </label>
+
+  <div class="form-actions">
+    <button type="submit" [disabled]="form.invalid">{{ isEditing ? 'Save Changes' : 'Save' }}</button>
+    <button type="button" class="secondary" (click)="cancel()">Cancel</button>
+  </div>
+</form>

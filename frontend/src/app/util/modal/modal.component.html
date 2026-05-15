@@ -1,0 +1,6 @@
+<div class="modal-backdrop" role="presentation" (click)="close()">
+  <section class="modal-panel" role="dialog" aria-modal="true" tabindex="-1" (click)="$event.stopPropagation()">
+    <button type="button" class="close-button" aria-label="Close dialog" (click)="close()">×</button>
+    <ng-content></ng-content>
+  </section>
+</div>
