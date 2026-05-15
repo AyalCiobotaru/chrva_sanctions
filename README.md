@@ -7,14 +7,22 @@ the FTP mirror and must not be uploaded to the legacy FTP server.
 
 - `frontend/`: Angular 21 standalone application shell with routes for Overview,
   Clubs, Coordinators, Tournaments, and Migration Inventory.
-- `api/`: Node API using SQL Server read models for the first migration
+- `api/`: Vercel serverless API entrypoint using SQL Server models for the first migration
   contracts:
   - `GET /api/health`
   - `GET /api/config`
   - `GET /api/clubs`
+  - `POST /api/clubs`
+  - `PUT /api/clubs/:clubCode`
+  - `GET /api/clubs/export`
+  - `GET /api/clubs/email-broadcast`
+  - `POST /api/clubs/email-broadcast`
   - `GET /api/coordinators`
   - `GET /api/tournaments`
+  - `PUT /api/tournaments/:id/added-to-aes`
+  - `PUT /api/tournaments/:id/ok-to-pay`
   - `GET /api/migration/inventory`
+- `server/`: shared backend code used by both Vercel and local API development.
 
 ## First Data Slice
 
@@ -42,9 +50,28 @@ The checked-in `.env.*.example` files document the required variables:
 - `CHRVA_SEASON_STATUS`
 - `CHRVA_SANCTION_STATUS`
 
+On Vercel, add those same names as Project Environment Variables. Do not commit
+real SQL Server credentials.
+
+## Vercel Deployment
+
+Deploy from this `modernized/` directory. `vercel.json` builds the Angular app
+and serves it from `frontend/dist/frontend/browser`, while `/api/*` is handled by
+the Vercel Web function in `api/index.mjs`.
+
+The frontend intentionally calls relative `/api` URLs. In production, Vercel
+serves the Angular files and backend function from the same origin.
+
 ## Run Locally
 
-From `modernized/api`:
+From `modernized/`:
+
+```powershell
+npm install
+npm run start:api:test
+```
+
+You can still run the API scripts from `modernized/api`:
 
 ```powershell
 npm start
