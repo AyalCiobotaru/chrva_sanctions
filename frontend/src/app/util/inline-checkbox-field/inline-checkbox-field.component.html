@@ -1,0 +1,12 @@
+<label class="inline-checkbox">
+  <input
+    type="checkbox"
+    [checked]="checked"
+    [disabled]="saving"
+    [attr.aria-label]="label"
+    (change)="update($any($event.target).checked)"
+  />
+  @if (label) {
+    <span>{{ label }}</span>
+  }
+</label>

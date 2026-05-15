@@ -50,7 +50,8 @@
   <table>
     <thead>
       <tr>
-        <th>AES</th>
+        <th>Added to AES</th>
+        <th>Okay to Pay</th>
         <th>Date</th>
         <th>Tournament</th>
         <th>Host</th>
@@ -64,8 +65,32 @@
       @for (tournament of tournaments; track tournament) {
         <tr>
           <td>
-            {{ tournament.addedToAesDate ?? 'Not posted' }}
-            <small>{{ tournament.okToPay ? 'Okay to pay' : '' }}</small>
+            <app-inline-date-field
+              label="Added to AES"
+              [value]="tournament.addedToAesDate"
+              [saving]="savingAddedToAes.has(tournament.id)"
+              (valueChanged)="updateAddedToAes(tournament.id, $event)"
+            ></app-inline-date-field>
+            @if (savingAddedToAes.has(tournament.id)) {
+              <small>Saving...</small>
+            }
+            @if (addedToAesErrors.get(tournament.id); as error) {
+              <small class="error">{{ error }}</small>
+            }
+          </td>
+          <td>
+            <app-inline-checkbox-field
+              label="Okay to pay"
+              [checked]="tournament.okToPay"
+              [saving]="savingOkToPay.has(tournament.id)"
+              (checkedChanged)="updateOkToPay(tournament.id, $event)"
+            ></app-inline-checkbox-field>
+            @if (savingOkToPay.has(tournament.id)) {
+              <small>Saving...</small>
+            }
+            @if (okToPayErrors.get(tournament.id); as error) {
+              <small class="error">{{ error }}</small>
+            }
           </td>
           <td>{{ tournament.date }}</td>
           <td>

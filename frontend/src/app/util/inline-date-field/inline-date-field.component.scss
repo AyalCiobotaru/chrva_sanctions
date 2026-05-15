@@ -1,0 +1,31 @@
+.inline-date {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+input {
+  border: 1px solid #bcc8d6;
+  border-radius: 4px;
+  font: inherit;
+  min-width: 132px;
+  padding: 7px 8px;
+}
+
+button {
+  background: #ffffff;
+  border: 1px solid #bcc8d6;
+  border-radius: 4px;
+  color: #27384c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 8px;
+}
+
+input:disabled,
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

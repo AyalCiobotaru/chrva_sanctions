@@ -11,7 +11,9 @@ import {
   searchCoordinators,
   sendClubEmailBroadcast,
   searchTournaments,
-  updateClub
+  updateClub,
+  updateTournamentAddedToAes,
+  updateTournamentOkToPay
 } from './db.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -62,6 +64,16 @@ createServer(async (request, response) => {
 
     if (route === 'GET /api/tournaments') {
       return json(response, await searchTournaments(url.searchParams));
+    }
+
+    if (request.method === 'PUT' && url.pathname.startsWith('/api/tournaments/') && url.pathname.endsWith('/added-to-aes')) {
+      const tournamentId = decodeURIComponent(url.pathname.slice('/api/tournaments/'.length, -'/added-to-aes'.length));
+      return json(response, await updateTournamentAddedToAes(tournamentId, await readJson(request)));
+    }
+
+    if (request.method === 'PUT' && url.pathname.startsWith('/api/tournaments/') && url.pathname.endsWith('/ok-to-pay')) {
+      const tournamentId = decodeURIComponent(url.pathname.slice('/api/tournaments/'.length, -'/ok-to-pay'.length));
+      return json(response, await updateTournamentOkToPay(tournamentId, await readJson(request)));
     }
 
     if (route === 'GET /api/migration/inventory') {

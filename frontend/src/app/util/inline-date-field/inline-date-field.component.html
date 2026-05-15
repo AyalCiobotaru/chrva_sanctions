@@ -1,0 +1,10 @@
+<div class="inline-date">
+  <input
+    type="date"
+    [attr.aria-label]="label"
+    [value]="value ?? ''"
+    [disabled]="saving"
+    (change)="update($any($event.target).value)"
+  />
+  <button type="button" [disabled]="saving || !value" aria-label="Clear date" (click)="clear()">Clear</button>
+</div>

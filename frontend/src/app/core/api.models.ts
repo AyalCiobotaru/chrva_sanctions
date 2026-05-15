@@ -159,6 +159,24 @@ export interface TournamentSummary {
   weekNumber: number | null;
 }
 
+export interface UpdateTournamentAddedToAesRequest {
+  addedToAesDate: string | null;
+}
+
+export interface UpdateTournamentAddedToAesResult {
+  id: string;
+  addedToAesDate: string | null;
+}
+
+export interface UpdateTournamentOkToPayRequest {
+  okToPay: boolean;
+}
+
+export interface UpdateTournamentOkToPayResult {
+  id: string;
+  okToPay: boolean;
+}
+
 export interface FeatureInventory {
   featureArea: string;
   files: number;

@@ -654,6 +654,76 @@ export async function searchTournaments(filters) {
   }));
 }
 
+export async function updateTournamentAddedToAes(tournamentId, body) {
+  const id = Number(tournamentId);
+  const addedToAesDate = normalizeNullableDate(body?.addedToAesDate);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    const error = new Error('Tournament id is invalid.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const pool = await getPool();
+  const result = await pool.request()
+    .input('id', sql.Int, id)
+    .input('addedToAesDate', sql.Date, addedToAesDate)
+    .query(`
+      update sanction_requested
+      set AES_added = @addedToAesDate
+      output inserted.id, inserted.AES_added
+      where id = @id
+    `);
+
+  if (result.recordset.length === 0) {
+    const error = new Error('Tournament was not found.');
+    error.statusCode = 404;
+    error.code = 'ERR_TOURNAMENT_NOT_FOUND';
+    throw error;
+  }
+
+  return {
+    id: String(result.recordset[0].id),
+    addedToAesDate: toDate(result.recordset[0].AES_added)
+  };
+}
+
+export async function updateTournamentOkToPay(tournamentId, body) {
+  const id = Number(tournamentId);
+  const okToPay = body?.okToPay === true ? 'Y' : 'N';
+
+  if (!Number.isInteger(id) || id <= 0) {
+    const error = new Error('Tournament id is invalid.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const pool = await getPool();
+  const result = await pool.request()
+    .input('id', sql.Int, id)
+    .input('okToPay', sql.NChar, okToPay)
+    .query(`
+      update sanction_requested
+      set AES_okToPay = @okToPay
+      output inserted.id, inserted.AES_okToPay
+      where id = @id
+    `);
+
+  if (result.recordset.length === 0) {
+    const error = new Error('Tournament was not found.');
+    error.statusCode = 404;
+    error.code = 'ERR_TOURNAMENT_NOT_FOUND';
+    throw error;
+  }
+
+  return {
+    id: String(result.recordset[0].id),
+    okToPay: text(result.recordset[0].AES_okToPay) === 'Y'
+  };
+}
+
 async function getPool() {
   poolPromise ??= sql.connect(await readDbConfig());
   return poolPromise;
@@ -782,6 +852,23 @@ function toDate(value) {
     return null;
   }
   return new Date(value).toISOString().slice(0, 10);
+}
+
+function normalizeNullableDate(value) {
+  const normalized = text(value);
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    const error = new Error('Added to AES must be a valid date.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  return normalized;
 }
 
 function toTime(value) {

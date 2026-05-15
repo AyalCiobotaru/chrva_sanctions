@@ -80,6 +80,11 @@ small {
   margin-top: 3px;
 }
 
+.error {
+  color: #9f1d1d;
+  font-weight: 700;
+}
+
 @media (max-width: 860px) {
   .filters {
     grid-template-columns: 1fr;

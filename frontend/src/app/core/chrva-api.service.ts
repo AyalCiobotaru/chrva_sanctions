@@ -14,7 +14,11 @@ import {
   MigrationInventory,
   NewClubRequest,
   TournamentSearch,
-  TournamentSummary
+  TournamentSummary,
+  UpdateTournamentAddedToAesRequest,
+  UpdateTournamentAddedToAesResult,
+  UpdateTournamentOkToPayRequest,
+  UpdateTournamentOkToPayResult
 } from './api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -61,6 +65,26 @@ export class ChrvaApiService {
     return this.http.get<TournamentSummary[]>(`${this.baseUrl}/tournaments`, {
       params: this.toParams(search)
     });
+  }
+
+  updateTournamentAddedToAes(
+    tournamentId: string,
+    request: UpdateTournamentAddedToAesRequest
+  ): Observable<UpdateTournamentAddedToAesResult> {
+    return this.http.put<UpdateTournamentAddedToAesResult>(
+      `${this.baseUrl}/tournaments/${encodeURIComponent(tournamentId)}/added-to-aes`,
+      request
+    );
+  }
+
+  updateTournamentOkToPay(
+    tournamentId: string,
+    request: UpdateTournamentOkToPayRequest
+  ): Observable<UpdateTournamentOkToPayResult> {
+    return this.http.put<UpdateTournamentOkToPayResult>(
+      `${this.baseUrl}/tournaments/${encodeURIComponent(tournamentId)}/ok-to-pay`,
+      request
+    );
   }
 
   getMigrationInventory(): Observable<MigrationInventory> {
