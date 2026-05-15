@@ -1,4 +1,3 @@
-import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,12 +16,15 @@ import {
 } from './db.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const mirrorRoot = join(__dirname, '..', '..');
-const port = Number(process.env.PORT ?? 4300);
+const appRoot = join(__dirname, '..');
 
-createServer(async (request, response) => {
+export async function handleApiRequest(request, response) {
   try {
-    const url = new URL(request.url ?? '/', `http://${request.headers.host}`);
+    if (request.method === 'OPTIONS') {
+      return empty(response, 204);
+    }
+
+    const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
     const route = `${request.method} ${url.pathname}`;
 
     if (route === 'GET /api/health') {
@@ -80,28 +82,38 @@ createServer(async (request, response) => {
       return json(response, await migrationInventory());
     }
 
-    response.writeHead(404, { 'content-type': 'application/json' });
-    response.end(JSON.stringify({ error: 'Not found' }));
+    return json(response, { error: 'Not found' }, 404);
   } catch (error) {
     const status = error.statusCode ?? (error.code === 'ELOGIN' || error.code === 'ESOCKET' ? 503 : 500);
     console.error(`[${new Date().toISOString()}] ${request.method} ${request.url} failed`, {
       code: error.code,
       message: error.message
     });
-    response.writeHead(status, { 'content-type': 'application/json' });
-    response.end(JSON.stringify({
+    return json(response, {
       error: status === 503 ? 'Database unavailable' : [400, 404, 409].includes(status) ? error.message : 'Internal server error',
       code: error.code ?? 'ERR_INTERNAL',
       message: error.message
-    }));
+    }, status);
   }
-}).listen(port, () => {
-  console.log(`CHRVA migration API listening at http://localhost:${port}`);
-});
+}
 
 async function migrationInventory() {
-  const path = join(mirrorRoot, '.migration', 'cfml-route-inventory.json');
-  const routes = JSON.parse(await readFile(path, 'utf8'));
+  const path = join(appRoot, '.migration', 'cfml-route-inventory.json');
+
+  let routes;
+  try {
+    routes = JSON.parse(await readFile(path, 'utf8'));
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return {
+        routes: 0,
+        features: [],
+        unavailable: true
+      };
+    }
+    throw error;
+  }
+
   const groups = new Map();
 
   for (const route of routes) {
@@ -138,9 +150,14 @@ async function readJson(request) {
   return text ? JSON.parse(text) : {};
 }
 
+function empty(response, status = 204) {
+  response.writeHead(status, corsHeaders());
+  response.end();
+}
+
 function json(response, body, status = 200) {
   response.writeHead(status, {
-    'access-control-allow-origin': '*',
+    ...corsHeaders(),
     'content-type': 'application/json'
   });
   response.end(JSON.stringify(body, null, 2));
@@ -148,9 +165,17 @@ function json(response, body, status = 200) {
 
 function excel(response, body, filename) {
   response.writeHead(200, {
-    'access-control-allow-origin': '*',
+    ...corsHeaders(),
     'content-disposition': `inline; filename=${filename}`,
     'content-type': 'application/vnd.ms-excel; charset=utf-8'
   });
   response.end(body);
+}
+
+function corsHeaders() {
+  return {
+    'access-control-allow-origin': '*',
+    'access-control-allow-methods': 'GET,POST,PUT,OPTIONS',
+    'access-control-allow-headers': 'content-type'
+  };
 }

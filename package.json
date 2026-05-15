@@ -1,0 +1,18 @@
+{
+  "name": "chrva-modernized",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm --prefix frontend run build",
+    "start:api": "node --env-file=api/.env.prod server/local-server.mjs",
+    "start:api:test": "node --env-file=api/.env.test server/local-server.mjs",
+    "vercel-build": "npm --prefix frontend run build"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.12.0 || >=24.0.0"
+  },
+  "dependencies": {
+    "mssql": "^12.5.3"
+  }
+}
