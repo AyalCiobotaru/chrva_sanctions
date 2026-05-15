@@ -2,6 +2,14 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  authenticateUser,
+  clearSessionCookie,
+  createSessionCookie,
+  getSessionUser,
+  requireRole,
+  requireSession
+} from './auth.mjs';
+import {
   createClub,
   exportClubsDirectory,
   getClubEmailBroadcast,
@@ -31,9 +39,43 @@ export async function handleApiRequest(request, response) {
       return json(response, { ok: true });
     }
 
+    if (route === 'GET /api/auth/session') {
+      const user = getSessionUser(request);
+      return json(response, { authenticated: Boolean(user), user });
+    }
+
+    if (route === 'POST /api/auth/login') {
+      const credentials = await readJson(request);
+      const user = authenticateUser(credentials.username, credentials.password);
+
+      if (!user) {
+        return json(response, {
+          error: 'Invalid username or password.',
+          code: 'ERR_INVALID_LOGIN'
+        }, 401);
+      }
+
+      return json(response, { authenticated: true, user }, 200, {
+        'set-cookie': createSessionCookie(user, request)
+      });
+    }
+
+    if (route === 'POST /api/auth/logout') {
+      return json(response, { authenticated: false, user: null }, 200, {
+        'set-cookie': clearSessionCookie(request)
+      });
+    }
+
     if (route === 'GET /api/config') {
       return json(response, getAppConfig());
     }
+
+    if (route === 'GET /api/migration/inventory') {
+      requireRole(request, 'master');
+      return json(response, await migrationInventory());
+    }
+
+    requireSession(request);
 
     if (route === 'GET /api/clubs') {
       return json(response, await searchClubs(url.searchParams));
@@ -78,10 +120,6 @@ export async function handleApiRequest(request, response) {
       return json(response, await updateTournamentOkToPay(tournamentId, await readJson(request)));
     }
 
-    if (route === 'GET /api/migration/inventory') {
-      return json(response, await migrationInventory());
-    }
-
     return json(response, { error: 'Not found' }, 404);
   } catch (error) {
     const status = error.statusCode ?? (error.code === 'ELOGIN' || error.code === 'ESOCKET' ? 503 : 500);
@@ -90,7 +128,7 @@ export async function handleApiRequest(request, response) {
       message: error.message
     });
     return json(response, {
-      error: status === 503 ? 'Database unavailable' : [400, 404, 409].includes(status) ? error.message : 'Internal server error',
+      error: status === 503 ? 'Database unavailable' : [400, 401, 403, 404, 409].includes(status) ? error.message : 'Internal server error',
       code: error.code ?? 'ERR_INTERNAL',
       message: error.message
     }, status);
@@ -155,10 +193,11 @@ function empty(response, status = 204) {
   response.end();
 }
 
-function json(response, body, status = 200) {
+function json(response, body, status = 200, extraHeaders = {}) {
   response.writeHead(status, {
     ...corsHeaders(),
-    'content-type': 'application/json'
+    'content-type': 'application/json',
+    ...extraHeaders
   });
   response.end(JSON.stringify(body, null, 2));
 }
