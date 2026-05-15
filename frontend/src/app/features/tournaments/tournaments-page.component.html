@@ -1,0 +1,99 @@
+<section class="page-header">
+  <div>
+    <h1>Tournaments</h1>
+    <p>Search AES tournament requests by season, program, division, host, and name.</p>
+  </div>
+</section>
+
+<form [formGroup]="form" class="filters">
+  <label>
+    Season
+    <select formControlName="season">
+      @if (config$ | async; as config) {
+        <option [value]="config.previousSeason">{{ config.previousSeason }}</option>
+        <option [value]="config.currentSeason">{{ config.currentSeason }}</option>
+        <option [value]="config.nextSeason">{{ config.nextSeason }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Program
+    <select formControlName="program">
+      <option value="jr">Girls Juniors</option>
+      <option value="boys">Boys</option>
+      <option value="adt">Adults</option>
+    </select>
+  </label>
+  <label>
+    Division
+    <input formControlName="division" />
+  </label>
+  <label>
+    Host
+    <input formControlName="host" />
+  </label>
+  <label>
+    Name
+    <input formControlName="name" />
+  </label>
+  <label>
+    Has notes
+    <input type="checkbox" formControlName="hasNotes" />
+  </label>
+  <label>
+    Not posted
+    <input type="checkbox" formControlName="notPosted" />
+  </label>
+</form>
+
+@if (tournaments$ | async; as tournaments) {
+  <table>
+    <thead>
+      <tr>
+        <th>AES</th>
+        <th>Date</th>
+        <th>Tournament</th>
+        <th>Host</th>
+        <th>Spots / Min</th>
+        <th>Site</th>
+        <th>Payment</th>
+        <th>Priority</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (tournament of tournaments; track tournament) {
+        <tr>
+          <td>
+            {{ tournament.addedToAesDate ?? 'Not posted' }}
+            <small>{{ tournament.okToPay ? 'Okay to pay' : '' }}</small>
+          </td>
+          <td>{{ tournament.date }}</td>
+          <td>
+            {{ tournament.name }}
+            <small>{{ tournament.division }} &middot; {{ tournament.type }} &middot; {{ tournament.uniqueId }}</small>
+            @if (tournament.startTime) {
+              <small>Start {{ tournament.startTime }}</small>
+            }
+          </td>
+          <td>
+            {{ tournament.host }}
+            <small>{{ tournament.clubName || tournament.clubCode }}</small>
+          </td>
+          <td>{{ tournament.teamCount ?? 'TBD' }} / {{ tournament.minimumTeamCount ?? 'TBD' }}</td>
+          <td>
+            {{ tournament.site }}
+            <small>{{ tournament.siteAddress }}</small>
+          </td>
+          <td>
+            {{ tournament.paymentType || 'TBD' }}
+            <small>{{ tournament.checkPayableTo }}</small>
+            @if (tournament.fee !== null) {
+              <small>{{ tournament.fee | currency }}</small>
+            }
+          </td>
+          <td>{{ tournament.priority ?? '' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

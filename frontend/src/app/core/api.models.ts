@@ -8,9 +8,9 @@ export interface LegacyConfig {
 
 export interface ClubSearch {
   clubName?: string;
-  contactFirstName?: string;
-  contactLastName?: string;
   state?: string;
+  activeStatus?: 'active' | 'inactive' | 'all';
+  meetingNoShows?: string;
 }
 
 export interface ClubSummary {
@@ -19,10 +19,80 @@ export interface ClubSummary {
   contactFirstName: string;
   contactLastName: string;
   address: string;
+  city: string;
   state: string;
   zip: string;
   website?: string;
   phone?: string;
+  phoneSecondary?: string;
+  email: string;
+  alternateEmail: string;
+  active: boolean;
+  clubType: string;
+  attendedMeeting: boolean;
+  previousNoShowFlag: boolean;
+  acknowledged: boolean;
+}
+
+export interface ClubSearchResult {
+  clubs: ClubSummary[];
+  total: number;
+  activeTotal: number;
+  attendingTotal: number;
+}
+
+export interface NewClubRequest {
+  clubCode: string;
+  clubName: string;
+  contactFirstName: string;
+  contactLastName: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone1: string;
+  phone2?: string;
+  extension?: string;
+  fax?: string;
+  website?: string;
+  email: string;
+  alternateEmail?: string;
+  comments?: string;
+  clubType?: string;
+  active?: boolean;
+}
+
+export interface ClubEmailRecipient {
+  email: string;
+  name: string;
+  clubName: string;
+}
+
+export interface ClubEmailFromOption {
+  email: string;
+  name: string;
+}
+
+export interface ClubEmailBroadcast {
+  clubType: string;
+  recipients: ClubEmailRecipient[];
+  recipientCount: number;
+  fromOptions: ClubEmailFromOption[];
+}
+
+export interface ClubEmailBroadcastRequest {
+  from: string;
+  subject: string;
+  information: string;
+  recipients: ClubEmailRecipient[];
+}
+
+export interface ClubEmailBroadcastResult {
+  sent: boolean;
+  dryRun: boolean;
+  recipientCount: number;
+  message: string;
 }
 
 export interface CoordinatorSearch {

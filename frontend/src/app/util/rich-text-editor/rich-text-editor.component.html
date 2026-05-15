@@ -1,0 +1,67 @@
+<div class="rich-text-editor">
+  @if (label) {
+    <span class="field-label">{{ label }}</span>
+  }
+
+  <quill-editor
+    [ngModel]="value"
+    [ngModelOptions]="{ standalone: true }"
+    (ngModelChange)="handleValueChange($event)"
+    (onBlur)="handleBlur()"
+    [format]="'html'"
+    [theme]="'snow'"
+    [modules]="modules"
+    [beforeRender]="beforeRender"
+    [styles]="{ height: minHeight }"
+    [placeholder]="placeholder"
+    [sanitize]="true"
+    [defaultEmptyValue]="''"
+    [readOnly]="disabled"
+  >
+    <div quill-editor-toolbar>
+      <span class="ql-formats">
+        <select class="ql-font" title="Font"></select>
+        <select class="ql-size" title="Size"></select>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-bold" title="Bold"></button>
+        <button class="ql-italic" title="Italic"></button>
+        <button class="ql-underline" title="Underline"></button>
+        <button class="ql-strike" title="Strike"></button>
+      </span>
+      <span class="ql-formats">
+        <select class="ql-color" title="Text color"></select>
+        <select class="ql-background" title="Background color"></select>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-script" value="sub" title="Subscript"></button>
+        <button class="ql-script" value="super" title="Superscript"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-header" value="1" title="Heading 1"></button>
+        <button class="ql-header" value="2" title="Heading 2"></button>
+        <button class="ql-blockquote" title="Blockquote"></button>
+        <button class="ql-code-block" title="Code block"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-list" value="ordered" title="Numbered list"></button>
+        <button class="ql-list" value="bullet" title="Bulleted list"></button>
+        <button class="ql-indent" value="-1" title="Decrease indent"></button>
+        <button class="ql-indent" value="+1" title="Increase indent"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-direction" value="rtl" title="Right-to-left"></button>
+        <select class="ql-align" title="Align"></select>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-link" title="Link"></button>
+        <button class="ql-image" title="Image"></button>
+        <button class="ql-video" title="Video"></button>
+        <button class="ql-formula" title="Formula"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-clean" title="Clear formatting"></button>
+      </span>
+    </div>
+  </quill-editor>
+</div>

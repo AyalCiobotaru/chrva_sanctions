@@ -1,176 +1,196 @@
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { startWith, switchMap } from 'rxjs';
-import { ClubSearch } from '../../core/api.models';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { merge, startWith, Subject, switchMap } from 'rxjs';
+import { ClubEmailBroadcast, ClubEmailRecipient, ClubSearch, NewClubRequest } from '../../core/api.models';
 import { ChrvaApiService } from '../../core/chrva-api.service';
+import { RichTextEditorComponent } from '../../util/rich-text-editor/rich-text-editor.component';
 
 @Component({
   selector: 'app-clubs-page',
   standalone: true,
-  imports: [AsyncPipe, NgFor, NgIf, ReactiveFormsModule],
-  template: `
-    <section class="page-header">
-      <div>
-        <h1>Club Contacts</h1>
-        <p>Search active junior clubs from the configured SQL Server environment.</p>
-      </div>
-    </section>
-
-    <form [formGroup]="form" class="filters">
-      <label>
-        Club Name
-        <input formControlName="clubName" />
-      </label>
-      <label>
-        First Name
-        <input formControlName="contactFirstName" />
-      </label>
-      <label>
-        Last Name
-        <input formControlName="contactLastName" />
-      </label>
-      <label>
-        State
-        <select formControlName="state">
-          <option value="">All</option>
-          <option value="DC">DC</option>
-          <option value="DE">DE</option>
-          <option value="MD">MD</option>
-          <option value="VA">VA</option>
-          <option value="WV">WV</option>
-        </select>
-      </label>
-    </form>
-
-    <table *ngIf="clubs$ | async as clubs">
-      <thead>
-        <tr>
-          <th>Club</th>
-          <th>Contact</th>
-          <th>Address</th>
-          <th>State</th>
-          <th>Website</th>
-          <th>Phone</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let club of clubs">
-          <td>
-            <strong>{{ club.clubName }}</strong>
-            <small>{{ club.clubCode }}</small>
-          </td>
-          <td>{{ club.contactFirstName }} {{ club.contactLastName }}</td>
-          <td>{{ club.address }} {{ club.zip }}</td>
-          <td>{{ club.state }}</td>
-          <td>
-            <a *ngIf="club.website" [href]="'https://' + club.website" target="_blank" rel="noreferrer">
-              Web Page
-            </a>
-          </td>
-          <td>{{ club.phone }}</td>
-        </tr>
-      </tbody>
-    </table>
-  `,
-  styles: [`
-    .page-header {
-      margin-bottom: 20px;
-    }
-
-    .eyebrow {
-      color: #6a3d09;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      margin: 0 0 8px;
-    }
-
-    p {
-      color: #5c6878;
-      margin: 0;
-    }
-
-    .filters {
-      background: #ffffff;
-      border: 1px solid #d9e1ec;
-      border-radius: 6px;
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      margin-bottom: 20px;
-      padding: 18px;
-    }
-
-    label {
-      color: #34465c;
-      display: grid;
-      font-size: 13px;
-      font-weight: 700;
-      gap: 6px;
-    }
-
-    input,
-    select {
-      border: 1px solid #bcc8d6;
-      border-radius: 4px;
-      font: inherit;
-      padding: 9px 10px;
-    }
-
-    table {
-      background: #ffffff;
-      border-collapse: collapse;
-      border: 1px solid #d9e1ec;
-      width: 100%;
-    }
-
-    th,
-    td {
-      border-bottom: 1px solid #e3e9f1;
-      padding: 11px 12px;
-      text-align: left;
-      vertical-align: top;
-    }
-
-    th {
-      background: #edf2f7;
-      color: #27384c;
-      font-size: 13px;
-    }
-
-    small {
-      color: #718093;
-      display: block;
-      margin-top: 3px;
-    }
-
-    @media (max-width: 860px) {
-      .filters {
-        grid-template-columns: 1fr;
-      }
-    }
-  `]
+  imports: [AsyncPipe, ReactiveFormsModule, RichTextEditorComponent],
+  templateUrl: './clubs-page.component.html',
+  styleUrl: './clubs-page.component.scss'
 })
 export class ClubsPageComponent {
+  private readonly defaultEmailSender = 'lauren.leventry@chrvajuniors.org';
+
+  showAddClub = false;
+  showEmailBroadcast = false;
+  addError = '';
+  emailBroadcast?: ClubEmailBroadcast;
+  emailError = '';
+  emailStatus = '';
+
   readonly form = this.fb.nonNullable.group({
+    activeStatus: 'active' as 'active' | 'inactive' | 'all',
     clubName: '',
-    contactFirstName: '',
-    contactLastName: '',
-    state: ''
+    state: '',
+    meetingNoShows: false
   });
 
-  readonly clubs$ = this.form.valueChanges.pipe(
-    startWith(this.form.getRawValue()),
-    switchMap((search) => this.api.searchClubs(search as ClubSearch))
+  readonly addForm = this.fb.nonNullable.group({
+    clubCode: ['', [Validators.required, Validators.maxLength(5)]],
+    clubName: ['', Validators.required],
+    contactFirstName: ['', Validators.required],
+    contactLastName: ['', Validators.required],
+    address1: ['', Validators.required],
+    address2: '',
+    city: ['', Validators.required],
+    state: ['', [Validators.required, Validators.maxLength(2)]],
+    zip: ['', Validators.required],
+    phone1: ['', Validators.required],
+    phone2: '',
+    email: ['', [Validators.required, Validators.email]],
+    alternateEmail: '',
+    website: '',
+    clubType: 'G',
+    active: true,
+    comments: ''
+  });
+
+  readonly emailForm = this.fb.nonNullable.group({
+    clubType: 'R',
+    from: ['', Validators.required],
+    subject: ['', Validators.required],
+    information: ['', Validators.required]
+  });
+
+  private readonly refresh$ = new Subject<void>();
+
+  readonly clubs$ = merge(this.form.valueChanges, this.refresh$).pipe(
+    startWith(null),
+    switchMap(() => this.api.searchClubs(this.toSearch()))
   );
 
   constructor(
     private readonly api: ChrvaApiService,
     private readonly fb: FormBuilder
   ) {}
+
+  toggleMeetingNoShows(): void {
+    this.form.controls.meetingNoShows.setValue(!this.form.controls.meetingNoShows.value);
+  }
+
+  exportClubs(): void {
+    window.location.href = '/api/clubs/export';
+  }
+
+  openEmailBroadcast(): void {
+    this.showEmailBroadcast = !this.showEmailBroadcast;
+
+    if (this.showEmailBroadcast) {
+      this.loadEmailBroadcast();
+    }
+  }
+
+  loadEmailBroadcast(): void {
+    this.emailError = '';
+    this.emailStatus = '';
+    this.api.getClubEmailBroadcast(this.emailForm.controls.clubType.value).subscribe({
+      next: (broadcast) => {
+        this.emailBroadcast = broadcast;
+        if (!this.emailForm.controls.from.value && broadcast.fromOptions.length > 0) {
+          const defaultSender = broadcast.fromOptions.find((sender) => sender.email === this.defaultEmailSender);
+          this.emailForm.controls.from.setValue((defaultSender ?? broadcast.fromOptions[0]).email);
+        }
+      },
+      error: (error) => {
+        this.emailError = error.error?.message ?? 'Unable to load club director email list.';
+      }
+    });
+  }
+
+  removeEmailRecipient(recipient: ClubEmailRecipient): void {
+    if (!this.emailBroadcast) {
+      return;
+    }
+
+    const recipients = this.emailBroadcast.recipients.filter((current) => current.email !== recipient.email);
+    this.emailBroadcast = {
+      ...this.emailBroadcast,
+      recipients,
+      recipientCount: recipients.length
+    };
+  }
+
+  sendEmailBroadcast(): void {
+    if (this.emailForm.invalid || !this.emailBroadcast) {
+      this.emailForm.markAllAsTouched();
+      return;
+    }
+
+    this.emailError = '';
+    this.emailStatus = '';
+    const raw = this.emailForm.getRawValue();
+
+    this.api.sendClubEmailBroadcast({
+      from: raw.from,
+      subject: raw.subject,
+      information: raw.information,
+      recipients: this.emailBroadcast.recipients
+    }).subscribe({
+      next: (result) => {
+        this.emailStatus = result.message;
+      },
+      error: (error) => {
+        this.emailError = error.error?.message ?? 'Unable to send club director email.';
+      }
+    });
+  }
+
+  saveClub(): void {
+    if (this.addForm.invalid) {
+      this.addForm.markAllAsTouched();
+      return;
+    }
+
+    this.addError = '';
+    const raw = this.addForm.getRawValue();
+    const club: NewClubRequest = {
+      ...raw,
+      clubCode: raw.clubCode.toUpperCase(),
+      state: raw.state.toUpperCase()
+    };
+
+    this.api.createClub(club).subscribe({
+      next: () => {
+        this.addForm.reset({
+          clubCode: '',
+          clubName: '',
+          contactFirstName: '',
+          contactLastName: '',
+          address1: '',
+          address2: '',
+          city: '',
+          state: '',
+          zip: '',
+          phone1: '',
+          phone2: '',
+          email: '',
+          alternateEmail: '',
+          website: '',
+          clubType: 'G',
+          active: true,
+          comments: ''
+        });
+        this.showAddClub = false;
+        this.refresh$.next();
+      },
+      error: (error) => {
+        this.addError = error.error?.message ?? 'Unable to save club.';
+      }
+    });
+  }
+
+  private toSearch(): ClubSearch {
+    const raw = this.form.getRawValue();
+    return {
+      activeStatus: raw.activeStatus,
+      clubName: raw.clubName,
+      state: raw.state,
+      meetingNoShows: raw.meetingNoShows ? 'true' : ''
+    };
+  }
 }

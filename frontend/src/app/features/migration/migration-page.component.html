@@ -1,0 +1,34 @@
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Local mirror analysis</p>
+    <h1>Migration Inventory</h1>
+    <p>Feature-area counts generated from .migration/cfml-route-inventory.json.</p>
+  </div>
+</section>
+
+@if (inventory$ | async; as inventory) {
+  <table>
+    <thead>
+      <tr>
+        <th>Feature Area</th>
+        <th>Files</th>
+        <th>Query Files</th>
+        <th>Write Files</th>
+        <th>Mail Files</th>
+        <th>Session Files</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (feature of inventory.features; track feature) {
+        <tr>
+          <td><strong>{{ feature.featureArea }}</strong></td>
+          <td>{{ feature.files }}</td>
+          <td>{{ feature.hasQuery }}</td>
+          <td>{{ feature.hasWrite }}</td>
+          <td>{{ feature.hasMail }}</td>
+          <td>{{ feature.hasSession }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

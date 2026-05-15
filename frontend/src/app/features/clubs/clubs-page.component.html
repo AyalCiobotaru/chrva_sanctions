@@ -1,0 +1,261 @@
+<section class="page-header">
+  <div>
+    <h1>Clubs</h1>
+    <p>Manage junior club contacts, meeting attendance, and directory exports.</p>
+  </div>
+  <div class="actions">
+    <button type="button" (click)="showAddClub = !showAddClub">
+      {{ showAddClub ? 'Close' : 'Add a New Club' }}
+    </button>
+    <button type="button" [class.active]="showEmailBroadcast" (click)="openEmailBroadcast()">
+      Email All Club Directors
+    </button>
+    <button type="button" [class.active]="form.controls.meetingNoShows.value" (click)="toggleMeetingNoShows()">
+      Meeting No Shows
+    </button>
+    <button type="button" (click)="exportClubs()">Export to Excel</button>
+  </div>
+</section>
+
+@if (showAddClub) {
+  <form [formGroup]="addForm" class="add-form" (ngSubmit)="saveClub()">
+    <h2>Add New Club</h2>
+    @if (addError) {
+      <p class="error">{{ addError }}</p>
+    }
+    <label>
+      Club Code *
+      <input formControlName="clubCode" maxlength="5" />
+    </label>
+    <label>
+      Club Name *
+      <input formControlName="clubName" maxlength="50" />
+    </label>
+    <label>
+      Contact First Name *
+      <input formControlName="contactFirstName" maxlength="25" />
+    </label>
+    <label>
+      Contact Last Name *
+      <input formControlName="contactLastName" maxlength="50" />
+    </label>
+    <label>
+      Address Line 1 *
+      <input formControlName="address1" maxlength="50" />
+    </label>
+    <label>
+      Address Line 2
+      <input formControlName="address2" maxlength="50" />
+    </label>
+    <label>
+      City *
+      <input formControlName="city" maxlength="30" />
+    </label>
+    <label>
+      State *
+      <input formControlName="state" maxlength="2" />
+    </label>
+    <label>
+      Zip *
+      <input formControlName="zip" maxlength="10" />
+    </label>
+    <label>
+      Phone 1 *
+      <input formControlName="phone1" maxlength="15" />
+    </label>
+    <label>
+      Phone 2
+      <input formControlName="phone2" maxlength="15" />
+    </label>
+    <label>
+      Email *
+      <input formControlName="email" maxlength="50" />
+    </label>
+    <label>
+      Alternate Email
+      <input formControlName="alternateEmail" maxlength="50" />
+    </label>
+    <label>
+      Website
+      <input formControlName="website" maxlength="100" />
+    </label>
+    <label>
+      Club Type
+      <select formControlName="clubType">
+        <option value="G">Girls</option>
+        <option value="B">Boys</option>
+        <option value="O">Outdoor</option>
+        <option value="A">Adult</option>
+      </select>
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="active" />
+      Active
+    </label>
+    <label class="wide">
+      Comments
+      <textarea formControlName="comments" rows="3"></textarea>
+    </label>
+    <div class="form-actions">
+      <button type="submit" [disabled]="addForm.invalid">Save</button>
+      <button type="button" class="secondary" (click)="showAddClub = false">Cancel</button>
+    </div>
+  </form>
+}
+
+@if (showEmailBroadcast) {
+  <form [formGroup]="emailForm" class="email-form" (ngSubmit)="sendEmailBroadcast()">
+    <h2>Email Broadcast</h2>
+    @if (emailError) {
+      <p class="error">{{ emailError }}</p>
+    }
+    @if (emailStatus) {
+      <p class="notice">{{ emailStatus }}</p>
+    }
+    <label>
+      Club Type
+      <select formControlName="clubType" (change)="loadEmailBroadcast()">
+        <option value="R">All</option>
+        <option value="G">Girls</option>
+        <option value="B">Boys</option>
+        <option value="O">Outdoor</option>
+      </select>
+    </label>
+    <label>
+      From
+      <select formControlName="from">
+        <option value="">Select from address</option>
+        @for (sender of emailBroadcast?.fromOptions; track sender) {
+          <option [value]="sender.email">
+            {{ sender.name }} &lt;{{ sender.email }}&gt;
+          </option>
+        }
+      </select>
+    </label>
+    <label>
+      Subject
+      <input formControlName="subject" maxlength="50" />
+    </label>
+    <div class="wide">
+      <app-rich-text-editor
+        formControlName="information"
+        label="Create Email"
+        placeholder="Compose email..."
+      ></app-rich-text-editor>
+    </div>
+    <div class="email-summary wide">
+      <strong>Number of Recipients: {{ emailBroadcast?.recipientCount ?? 0 }}</strong>
+      <span>Only active non-adult clubs are included, matching the legacy broadcast filter.</span>
+    </div>
+    @if (emailBroadcast?.recipients?.length) {
+      <div class="recipient-list wide">
+        @for (recipient of emailBroadcast?.recipients; track recipient) {
+          <span class="recipient-chip">
+            {{ recipient.email }}
+            <button type="button" aria-label="Remove recipient" (click)="removeEmailRecipient(recipient)">Remove</button>
+          </span>
+        }
+      </div>
+    }
+    <div class="form-actions">
+      <button type="submit" [disabled]="emailForm.invalid || !emailBroadcast?.recipientCount">Send</button>
+      <button type="button" class="secondary" (click)="showEmailBroadcast = false">Cancel</button>
+    </div>
+  </form>
+}
+
+<form [formGroup]="form" class="filters">
+  <label>
+    Show
+    <select formControlName="activeStatus">
+      <option value="all">All</option>
+      <option value="active">Active Only</option>
+      <option value="inactive">Inactive Only</option>
+    </select>
+  </label>
+  <label>
+    Club Name
+    <input formControlName="clubName" />
+  </label>
+  <label>
+    State
+    <select formControlName="state">
+      <option value="">All</option>
+      <option value="DC">DC</option>
+      <option value="DE">DE</option>
+      <option value="MD">MD</option>
+      <option value="VA">VA</option>
+      <option value="WV">WV</option>
+    </select>
+  </label>
+</form>
+
+@if (clubs$ | async; as result) {
+  <div class="summary">
+    <strong>Number of Clubs: {{ result.total }} / {{ result.activeTotal }}</strong>
+    <span>Attended previous Club Directors' Meeting: {{ result.attendingTotal }}</span>
+    @if (form.controls.meetingNoShows.value) {
+      <span>Showing active clubs missing the legacy no-show attendance field.</span>
+    }
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Club Code</th>
+        <th>Club Name</th>
+        <th>Director</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Phone</th>
+        <th>Web Page</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (club of result.clubs; track club) {
+        <tr>
+          <td>
+            {{ club.clubCode }}
+            @if (club.attendedMeeting) {
+              <small>Attended</small>
+            }
+          </td>
+          <td>
+            <strong>{{ club.clubName }}</strong>
+            <small>{{ club.clubType }}</small>
+            @if (!club.active) {
+              <small>Not Active</small>
+            }
+            @if (club.acknowledged) {
+              <small>Responded</small>
+            }
+          </td>
+          <td>
+            {{ club.contactFirstName }} {{ club.contactLastName }}
+            <small>{{ club.email }}</small>
+            @if (club.alternateEmail) {
+              <small>{{ club.alternateEmail }}</small>
+            }
+          </td>
+          <td>{{ club.city }}</td>
+          <td>{{ club.state }}</td>
+          <td>
+            {{ club.phone }}
+            @if (club.phoneSecondary) {
+              <small>{{ club.phoneSecondary }}</small>
+            }
+          </td>
+          <td>
+            @if (club.website) {
+              <a [href]="'https://' + club.website" target="_blank" rel="noreferrer">
+                Website
+              </a>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  @if (result.clubs.length === 0) {
+    <p class="empty">No clubs found.</p>
+  }
+}

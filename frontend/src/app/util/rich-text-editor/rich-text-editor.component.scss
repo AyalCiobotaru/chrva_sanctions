@@ -1,0 +1,34 @@
+.rich-text-editor {
+  display: grid;
+  gap: 6px;
+}
+
+.field-label {
+  color: #34465c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+:host ::ng-deep quill-editor {
+  color: #1f2937;
+  font-weight: 400;
+}
+
+:host ::ng-deep quill-editor .ql-toolbar,
+:host ::ng-deep quill-editor .ql-container {
+  border-color: #bcc8d6;
+}
+
+:host ::ng-deep quill-editor .ql-toolbar {
+  border-radius: 4px 4px 0 0;
+}
+
+:host ::ng-deep quill-editor .ql-container {
+  border-radius: 0 0 4px 4px;
+  font: inherit;
+}
+
+:host ::ng-deep quill-editor .ql-editor {
+  font: inherit;
+  min-height: 220px;
+}

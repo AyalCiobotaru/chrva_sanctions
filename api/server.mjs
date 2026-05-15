@@ -2,7 +2,16 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAppConfig, searchClubs, searchCoordinators, searchTournaments } from './db.mjs';
+import {
+  createClub,
+  exportClubsDirectory,
+  getClubEmailBroadcast,
+  getAppConfig,
+  searchClubs,
+  searchCoordinators,
+  sendClubEmailBroadcast,
+  searchTournaments
+} from './db.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const mirrorRoot = join(__dirname, '..', '..');
@@ -25,6 +34,22 @@ createServer(async (request, response) => {
       return json(response, await searchClubs(url.searchParams));
     }
 
+    if (route === 'POST /api/clubs') {
+      return json(response, await createClub(await readJson(request)), 201);
+    }
+
+    if (route === 'GET /api/clubs/export') {
+      return excel(response, await exportClubsDirectory(), 'CHRVA_Club_Export.xls');
+    }
+
+    if (route === 'GET /api/clubs/email-broadcast') {
+      return json(response, await getClubEmailBroadcast(url.searchParams));
+    }
+
+    if (route === 'POST /api/clubs/email-broadcast') {
+      return json(response, await sendClubEmailBroadcast(await readJson(request)));
+    }
+
     if (route === 'GET /api/coordinators') {
       return json(response, await searchCoordinators(url.searchParams));
     }
@@ -40,14 +65,14 @@ createServer(async (request, response) => {
     response.writeHead(404, { 'content-type': 'application/json' });
     response.end(JSON.stringify({ error: 'Not found' }));
   } catch (error) {
-    const status = error.code === 'ELOGIN' || error.code === 'ESOCKET' ? 503 : 500;
+    const status = error.statusCode ?? (error.code === 'ELOGIN' || error.code === 'ESOCKET' ? 503 : 500);
     console.error(`[${new Date().toISOString()}] ${request.method} ${request.url} failed`, {
       code: error.code,
       message: error.message
     });
     response.writeHead(status, { 'content-type': 'application/json' });
     response.end(JSON.stringify({
-      error: status === 503 ? 'Database unavailable' : 'Internal server error',
+      error: status === 503 ? 'Database unavailable' : status === 400 || status === 409 ? error.message : 'Internal server error',
       code: error.code ?? 'ERR_INTERNAL',
       message: error.message
     }));
@@ -84,10 +109,30 @@ async function migrationInventory() {
   };
 }
 
-function json(response, body) {
-  response.writeHead(200, {
+async function readJson(request) {
+  const chunks = [];
+
+  for await (const chunk of request) {
+    chunks.push(chunk);
+  }
+
+  const text = Buffer.concat(chunks).toString('utf8');
+  return text ? JSON.parse(text) : {};
+}
+
+function json(response, body, status = 200) {
+  response.writeHead(status, {
     'access-control-allow-origin': '*',
     'content-type': 'application/json'
   });
   response.end(JSON.stringify(body, null, 2));
+}
+
+function excel(response, body, filename) {
+  response.writeHead(200, {
+    'access-control-allow-origin': '*',
+    'content-disposition': `inline; filename=${filename}`,
+    'content-type': 'application/vnd.ms-excel; charset=utf-8'
+  });
+  response.end(body);
 }

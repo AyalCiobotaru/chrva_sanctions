@@ -1,0 +1,76 @@
+<section class="page-header">
+  <div>
+    <h1>Regional Junior Contacts</h1>
+    <p>Search regional contacts from the configured SQL Server environment.</p>
+  </div>
+</section>
+
+<form [formGroup]="form" class="filters">
+  <label>
+    Category
+    <select formControlName="category">
+      <option value="">All</option>
+      <option value="Coordinator">Age Group Coordinators</option>
+      <option value="Officials">Officials/Scorekeepers</option>
+      <option value="Administrators">Administration</option>
+    </select>
+  </label>
+  <label>
+    First Name
+    <input formControlName="firstName" />
+  </label>
+  <label>
+    Last Name
+    <input formControlName="lastName" />
+  </label>
+</form>
+
+@if (coordinators$ | async; as coordinators) {
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Contact</th>
+        <th>Address</th>
+        <th>Phone</th>
+        <th>Email</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (coordinator of coordinators; track coordinator) {
+        <tr>
+          <td>
+            <strong>{{ coordinator.category }}</strong>
+            <small>{{ coordinator.grouping }}</small>
+          </td>
+          <td>{{ coordinator.firstName }} {{ coordinator.lastName }}</td>
+          <td>
+            {{ coordinator.address }}
+            <small>{{ coordinator.city }} {{ coordinator.state }} {{ coordinator.zip }}</small>
+          </td>
+          <td>
+            {{ coordinator.phonePrimary }}
+            @if (coordinator.phoneSecondary) {
+              <small>
+                {{ coordinator.phoneSecondary }}
+                @if (coordinator.extension) {
+                  <span>ext. {{ coordinator.extension }}</span>
+                }
+              </small>
+            }
+            @if (coordinator.fax) {
+              <small>Fax: {{ coordinator.fax }}</small>
+            }
+          </td>
+          <td>
+            @if (coordinator.email) {
+              <a [href]="'mailto:' + coordinator.email">
+                {{ coordinator.email }}
+              </a>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
