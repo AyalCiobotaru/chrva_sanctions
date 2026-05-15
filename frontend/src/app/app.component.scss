@@ -45,7 +45,8 @@ nav {
   gap: 6px;
 }
 
-nav a {
+nav a,
+.login-link {
   border-radius: 4px;
   color: #34465c;
   padding: 9px 12px;
@@ -53,9 +54,45 @@ nav a {
 }
 
 nav a.active,
-nav a:hover {
+nav a:hover,
+.login-link.active,
+.login-link:hover {
   background: #e8eef6;
   color: #0f3563;
+}
+
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.session {
+  align-items: center;
+  border-left: 1px solid #d7dee8;
+  display: flex;
+  gap: 10px;
+  padding-left: 14px;
+}
+
+.session span {
+  color: #526071;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.session button {
+  background: #ffffff;
+  border: 1px solid #b8c5d6;
+  border-radius: 4px;
+  color: #34465c;
+  cursor: pointer;
+  font: inherit;
+  padding: 8px 10px;
+}
+
+.session button:hover {
+  background: #f0f4f8;
 }
 
 main {
@@ -74,6 +111,17 @@ main {
 
   nav {
     flex-wrap: wrap;
+  }
+
+  .topbar-actions,
+  .session {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .session {
+    border-left: 0;
+    padding-left: 0;
   }
 
   main {

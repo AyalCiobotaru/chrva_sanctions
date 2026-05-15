@@ -6,6 +6,24 @@ export interface LegacyConfig {
   sanctionStatus: 'Open' | 'Closed';
 }
 
+export type AuthRole = 'master' | 'toolsAdmin';
+
+export interface AuthUser {
+  username: string;
+  displayName: string;
+  role: AuthRole;
+}
+
+export interface AuthSession {
+  authenticated: boolean;
+  user: AuthUser | null;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
 export interface ClubSearch {
   clubName?: string;
   state?: string;

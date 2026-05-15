@@ -8,6 +8,7 @@ import {
   ClubEmailBroadcast,
   ClubEmailBroadcastRequest,
   ClubEmailBroadcastResult,
+  AuthSession,
   CoordinatorSearch,
   CoordinatorSummary,
   LegacyConfig,
@@ -18,7 +19,8 @@ import {
   UpdateTournamentAddedToAesRequest,
   UpdateTournamentAddedToAesResult,
   UpdateTournamentOkToPayRequest,
-  UpdateTournamentOkToPayResult
+  UpdateTournamentOkToPayResult,
+  LoginRequest
 } from './api.models';
 
 @Injectable({ providedIn: 'root' })
@@ -29,6 +31,18 @@ export class ChrvaApiService {
 
   getConfig(): Observable<LegacyConfig> {
     return this.http.get<LegacyConfig>(`${this.baseUrl}/config`);
+  }
+
+  getAuthSession(): Observable<AuthSession> {
+    return this.http.get<AuthSession>(`${this.baseUrl}/auth/session`);
+  }
+
+  login(credentials: LoginRequest): Observable<AuthSession> {
+    return this.http.post<AuthSession>(`${this.baseUrl}/auth/login`, credentials);
+  }
+
+  logout(): Observable<AuthSession> {
+    return this.http.post<AuthSession>(`${this.baseUrl}/auth/logout`, {});
   }
 
   searchClubs(search: ClubSearch): Observable<ClubSearchResult> {

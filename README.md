@@ -10,6 +10,9 @@ the FTP mirror and must not be uploaded to the legacy FTP server.
 - `api/`: Vercel serverless API entrypoint using SQL Server models for the first migration
   contracts:
   - `GET /api/health`
+  - `GET /api/auth/session`
+  - `POST /api/auth/login`
+  - `POST /api/auth/logout`
   - `GET /api/config`
   - `GET /api/clubs`
   - `POST /api/clubs`
@@ -30,6 +33,12 @@ The first data slice exposes clubs, coordinators, and tournaments from SQL
 Server through API contracts. The modern app does not read configuration from
 the mirrored server-rendered application.
 
+Overview and season config remain public. All other migrated routes require a
+signed session cookie. The initial roles are:
+
+- `master`: full access, including Migration.
+- `toolsAdmin`: access to migrated tools except Migration.
+
 Runtime configuration comes from environment files:
 
 - `.env.test` for test
@@ -49,6 +58,7 @@ The checked-in `.env.*.example` files document the required variables:
 - `CHRVA_NEXT_SEASON`
 - `CHRVA_SEASON_STATUS`
 - `CHRVA_SANCTION_STATUS`
+- `CHRVA_AUTH_SECRET`
 
 On Vercel, add those same names as Project Environment Variables. Do not commit
 real SQL Server credentials.

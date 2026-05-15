@@ -8,17 +8,32 @@
       </span>
     </a>
 
-    <nav aria-label="Primary">
-      @for (item of navItems; track item) {
-        <a
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: item.path === '/' }"
-          >
-          {{ item.label }}
-        </a>
-      }
-    </nav>
+    @if (session$ | async; as session) {
+      <div class="topbar-actions">
+        <nav aria-label="Primary">
+          @for (item of navItems; track item) {
+            @if (canShowNavItem(item, session)) {
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+                >
+                {{ item.label }}
+              </a>
+            }
+          }
+        </nav>
+
+        @if (session.authenticated && session.user) {
+          <div class="session">
+            <span>{{ session.user.displayName }}</span>
+            <button type="button" (click)="logout()">Sign out</button>
+          </div>
+        } @else {
+          <a routerLink="/login" class="login-link" routerLinkActive="active">Sign in</a>
+        }
+      </div>
+    }
   </header>
 
   <app-error-banner />
