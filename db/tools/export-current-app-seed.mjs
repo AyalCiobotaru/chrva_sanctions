@@ -26,9 +26,20 @@ const pool = await sql.connect({
 try {
   const selectedTournaments = await querySanctionRequests();
   const clubCodes = [...new Set(selectedTournaments.map((row) => text(row.clubcode)).filter(Boolean))].sort();
+  const sanctionIds = [...new Set(selectedTournaments.map((row) => text(row.sanctionid)).filter(Boolean))].sort();
   const clubs = await queryClubs(clubCodes);
   const coordinators = await queryAll('coordcontacts');
-  const rowVersionColumns = await queryRowVersionColumns(['clubcontacts', 'coordcontacts', 'sanction_requested']);
+  const tournamentNotes = await queryTournamentNotes(sanctionIds);
+  const venues = await queryAll('venues');
+  const ageGroups = await queryAll('tblagegroups');
+  const rowVersionColumns = await queryRowVersionColumns([
+    'clubcontacts',
+    'coordcontacts',
+    'sanction_requested',
+    'tournamentNotes',
+    'venues',
+    'tblagegroups',
+  ]);
 
   const script = [
     'set nocount on;',
@@ -41,6 +52,9 @@ try {
     deleteStatement('sanction_requested'),
     deleteStatement('clubcontacts'),
     deleteStatement('coordcontacts'),
+    deleteStatement('tournamentNotes'),
+    deleteStatement('venues'),
+    deleteStatement('tblagegroups'),
     '',
     ...insertRows('coordcontacts', coordinators, rowVersionColumns),
     '',
@@ -49,6 +63,12 @@ try {
     }),
     '',
     ...insertRows('sanction_requested', selectedTournaments, rowVersionColumns, {}, { identityInsert: true }),
+    '',
+    ...insertRows('tournamentNotes', tournamentNotes, rowVersionColumns),
+    '',
+    ...insertRows('venues', venues, rowVersionColumns, {}, { identityInsert: true }),
+    '',
+    ...insertRows('tblagegroups', ageGroups, rowVersionColumns, {}, { identityInsert: true }),
     '',
     'commit transaction;',
     'go',
@@ -60,7 +80,13 @@ try {
     'union all',
     "select 'coordcontacts', count(*) from dbo.coordcontacts",
     'union all',
-    "select 'sanction_requested', count(*) from dbo.sanction_requested;",
+    "select 'sanction_requested', count(*) from dbo.sanction_requested",
+    'union all',
+    "select 'tournamentNotes', count(*) from dbo.tournamentNotes",
+    'union all',
+    "select 'venues', count(*) from dbo.venues",
+    'union all',
+    "select 'tblagegroups', count(*) from dbo.tblagegroups;",
     'go',
     '',
   ].join('\n');
@@ -72,6 +98,9 @@ try {
   console.log(`coordcontacts=${coordinators.length}`);
   console.log(`clubcontacts=${clubs.length}`);
   console.log(`sanction_requested=${selectedTournaments.length}`);
+  console.log(`tournamentNotes=${tournamentNotes.length}`);
+  console.log(`venues=${venues.length}`);
+  console.log(`tblagegroups=${ageGroups.length}`);
   console.log(`inactive_or_non_junior_referenced_clubs=${clubs.filter((row) => text(row.active) !== 'Y' || text(row.grouping) !== 'Juniors').length}`);
 } finally {
   await pool.close();
@@ -86,10 +115,6 @@ async function querySanctionRequests() {
     select *
     from dbo.sanction_requested
     where datepart(year, dte) in (${placeholders})
-      and (
-        sanctionStatus in ('Approved', 'Posted', 'SO')
-        or AES_added is not null
-      )
     order by dte, division, priority, id
   `);
 
@@ -114,6 +139,25 @@ async function queryClubs(clubCodes) {
 
 async function queryAll(table) {
   const result = await pool.request().query(`select * from dbo.${quoteName(table)} order by 1`);
+  return result.recordset;
+}
+
+async function queryTournamentNotes(sanctionIds) {
+  if (sanctionIds.length === 0) {
+    return [];
+  }
+
+  const request = pool.request();
+  sanctionIds.forEach((sanctionId, index) => request.input(`sanctionId${index}`, sql.NVarChar, sanctionId));
+  const placeholders = sanctionIds.map((_, index) => `@sanctionId${index}`).join(', ');
+
+  const result = await request.query(`
+    select *
+    from dbo.tournamentNotes
+    where SanctionKey in (${placeholders})
+    order by SanctionKey
+  `);
+
   return result.recordset;
 }
 

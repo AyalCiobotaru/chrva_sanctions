@@ -52,6 +52,15 @@ input[type="checkbox"] {
   width: 20px;
 }
 
+.password-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.password-control input {
+  border-radius: 4px 0 0 4px;
+}
+
 button {
   background: #27384c;
   border: 1px solid #27384c;
@@ -66,6 +75,28 @@ button {
 button.secondary {
   background: #ffffff;
   color: #27384c;
+}
+
+button.icon-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #bcc8d6;
+  border-left: 0;
+  border-radius: 0 4px 4px 0;
+  color: #34465c;
+  display: inline-flex;
+  justify-content: center;
+  padding: 0;
+}
+
+button.icon-button svg {
+  fill: none;
+  height: 18px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 18px;
 }
 
 button:disabled {

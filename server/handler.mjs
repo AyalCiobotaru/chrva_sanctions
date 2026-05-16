@@ -3,17 +3,26 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   authenticateUser,
+  clearClubSessionCookie,
   clearSessionCookie,
+  createClubSessionCookie,
   createSessionCookie,
+  getClubSession,
   getSessionUser,
+  requireClubSession,
   requireRole,
   requireSession
 } from './auth.mjs';
 import {
+  authenticateSanctionClub,
   createClub,
+  createSanctionRequest,
   exportClubsDirectory,
+  getCurrentSanctionRequests,
   getClubEmailBroadcast,
   getAppConfig,
+  getSanctionRequestFormOptions,
+  getSanctionRequestHistory,
   searchClubs,
   searchCoordinators,
   sendClubEmailBroadcast,
@@ -68,6 +77,61 @@ export async function handleApiRequest(request, response) {
 
     if (route === 'GET /api/config') {
       return json(response, getAppConfig());
+    }
+
+    if (route === 'GET /api/sanction-requests/auth/session') {
+      const club = getClubSession(request);
+      return json(response, { authenticated: Boolean(club), club });
+    }
+
+    if (route === 'POST /api/sanction-requests/auth/login') {
+      const credentials = await readJson(request);
+
+      if (!credentials.agree || !credentials.agreePenalties) {
+        return json(response, {
+          error: 'Hosting requirement agreement is required.',
+          code: 'ERR_AGREEMENT_REQUIRED'
+        }, 400);
+      }
+
+      const club = await authenticateSanctionClub(credentials.username, credentials.password);
+
+      if (!club) {
+        return json(response, {
+          error: 'Invalid club username or password.',
+          code: 'ERR_INVALID_CLUB_LOGIN'
+        }, 401);
+      }
+
+      return json(response, { authenticated: true, club }, 200, {
+        'set-cookie': createClubSessionCookie(club, request)
+      });
+    }
+
+    if (route === 'POST /api/sanction-requests/auth/logout') {
+      return json(response, { authenticated: false, club: null }, 200, {
+        'set-cookie': clearClubSessionCookie(request)
+      });
+    }
+
+    if (route === 'GET /api/sanction-requests/history') {
+      const club = requireClubSession(request);
+      return json(response, await getSanctionRequestHistory(club.clubCode));
+    }
+
+    if (route === 'GET /api/sanction-requests/current') {
+      const club = requireClubSession(request);
+      return json(response, await getCurrentSanctionRequests(club.clubCode));
+    }
+
+    if (route === 'GET /api/sanction-requests/form-options') {
+      const club = requireClubSession(request);
+      return json(response, await getSanctionRequestFormOptions(club.clubCode));
+    }
+
+    if (route === 'POST /api/sanction-requests') {
+      const club = requireClubSession(request);
+      return json(response, await createSanctionRequest(club.clubCode, await readJson(request)), 201);
     }
 
     if (route === 'GET /api/migration/inventory') {

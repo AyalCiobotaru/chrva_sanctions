@@ -12,6 +12,374 @@ export function getAppConfig() {
   };
 }
 
+export async function authenticateSanctionClub(username, password) {
+  const pool = await getPool();
+  const result = await pool.request()
+    .input('username', sql.NVarChar, text(username))
+    .input('password', sql.NVarChar, text(password))
+    .query(`
+      select top 1 ClubCode, ClubName
+      from clubcontacts
+      where username = @username
+        and password = @password
+        and active = 'Y'
+    `);
+
+  if (result.recordset.length === 0) {
+    return null;
+  }
+
+  return mapSanctionClub(result.recordset[0]);
+}
+
+export async function getSanctionRequestHistory(clubCode) {
+  const pool = await getPool();
+  const config = getAppConfig();
+  const previousSeason = Number(config.previousSeason);
+  const currentSeason = Number(config.currentSeason);
+  const appendPrevious = seasonSuffix(previousSeason);
+  const appendCurrent = seasonSuffix(currentSeason);
+  const pushWeeks = currentSeason === 2016 || currentSeason === 2022 ? 1 : 0;
+  const club = await getSanctionClub(pool, clubCode);
+
+  const result = await pool.request()
+    .input('clubCode', sql.NVarChar, clubCode)
+    .input('seasonStart', sql.Date, `${previousSeason - 1}-10-01`)
+    .input('seasonEnd', sql.Date, `${previousSeason}-12-31`)
+    .query(`
+      select
+        id,
+        sanctionid,
+        dte,
+        division,
+        type,
+        number_of_teams,
+        site,
+        HDP,
+        status,
+        sanctionStatus,
+        (case when datepart(w, dte) = 1 then datepart(ww, dte) - 1 else datepart(ww, dte) end) as weekNumber
+      from sanction_requested
+      where clubcode = @clubCode
+        and sanctionid not like '%C'
+        and dte > @seasonStart
+        and dte < @seasonEnd
+        and sanctionStatus in ('Approved', 'Cancelled')
+      order by dte, division
+    `);
+
+  const renewalIds = result.recordset
+    .map((row) => text(row.sanctionid).replace(appendPrevious, appendCurrent))
+    .filter(Boolean);
+  const renewalStatuses = await getRenewalStatuses(pool, clubCode, renewalIds);
+
+  return {
+    club,
+    previousSeason: String(previousSeason),
+    currentSeason: String(currentSeason),
+    tournaments: result.recordset.map((row) => {
+      const renewalSanctionId = text(row.sanctionid).replace(appendPrevious, appendCurrent);
+
+      return {
+        id: String(row.id),
+        sanctionId: text(row.sanctionid),
+        renewalSanctionId,
+        date: toDate(row.dte),
+        proposedRenewalDate: addWeeksDate(row.dte, 52 + pushWeeks),
+        weekNumber: row.weekNumber ?? null,
+        division: text(row.division),
+        type: text(row.type),
+        teamCount: row.number_of_teams ?? null,
+        site: text(row.site),
+        hdp: text(row.HDP) === 'Y',
+        status: text(row.status),
+        sanctionStatus: text(row.sanctionStatus),
+        renewalStatus: renewalStatuses.get(renewalSanctionId) ?? null
+      };
+    })
+  };
+}
+
+export async function getCurrentSanctionRequests(clubCode) {
+  const pool = await getPool();
+  const config = getAppConfig();
+  const previousSeason = Number(config.previousSeason);
+  const currentSeason = Number(config.currentSeason);
+  const club = await getSanctionClub(pool, clubCode);
+  const result = await pool.request()
+    .input('clubCode', sql.NVarChar, clubCode)
+    .input('seasonStart', sql.Date, `${previousSeason}-10-01`)
+    .query(`
+      select
+        sr.id,
+        sr.sanctionid,
+        sr.sanctionStatus,
+        sr.dte,
+        sr.division,
+        sr.type,
+        sr.number_of_teams,
+        sr.entry_fee,
+        sr.tournname,
+        sr.site,
+        sr.HDP,
+        sr.sanctionNotes,
+        tn.notes,
+        (case when datepart(w, sr.dte) = 1 then datepart(ww, sr.dte) - 1 else datepart(ww, sr.dte) end) as weekNumber
+      from sanction_requested sr
+      left join tournamentNotes tn on sr.sanctionid = tn.SanctionKey
+      where sr.clubcode = @clubCode
+        and sr.dte > @seasonStart
+      order by sr.sanctionStatus, sr.dte, sr.division
+    `);
+
+  return {
+    club,
+    currentSeason: String(currentSeason),
+    requests: result.recordset.map((row) => ({
+      id: String(row.id),
+      sanctionId: text(row.sanctionid),
+      sanctionStatus: text(row.sanctionStatus),
+      date: toDate(row.dte),
+      weekNumber: row.weekNumber ?? null,
+      division: text(row.division),
+      type: text(row.type),
+      teamCount: row.number_of_teams ?? null,
+      entryFee: toNumber(row.entry_fee),
+      name: text(row.tournname),
+      site: text(row.site),
+      hdp: text(row.HDP) === 'Y',
+      sanctionNotes: text(row.sanctionNotes),
+      tournamentNotes: text(row.notes),
+      canModify: ['Pending', 'Question'].includes(text(row.sanctionStatus))
+    }))
+  };
+}
+
+export async function getSanctionRequestFormOptions(clubCode) {
+  const pool = await getPool();
+  const club = await getSanctionClub(pool, clubCode);
+  const venues = await queryOptional(pool, `
+    select name, address
+    from venues
+    order by name
+  `);
+  const ageGroups = await queryOptional(pool, `
+    select agegroup
+    from tblagegroups
+    where (substring(agegroup, 1, 1) = 'G' or substring(agegroup, 1, 1) = 'B')
+      and year = '2023'
+    order by agegroup
+  `);
+
+  return {
+    club,
+    venues: venues.map((row) => ({
+      name: text(row.name),
+      address: text(row.address)
+    })).filter((venue) => venue.name && venue.address),
+    ageGroups: ageGroups.map((row) => text(row.agegroup)).filter(Boolean),
+    startTimes: buildStartTimes()
+  };
+}
+
+export async function createSanctionRequest(clubCode, body) {
+  const pool = await getPool();
+  const config = getAppConfig();
+  const club = await getSanctionClub(pool, clubCode);
+  const request = normalizeSanctionRequestInput(body);
+  const errors = validateSanctionRequest(request);
+
+  if (errors.length > 0) {
+    const error = new Error(errors.join(' '));
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const result = await pool.request()
+    .input('sanctionid', sql.NVarChar, 'New')
+    .input('dte', sql.Date, request.date)
+    .input('startTime', sql.Time, request.startTime)
+    .input('clubcode', sql.NVarChar, club.clubCode)
+    .input('tournname', sql.NVarChar, request.tournamentName)
+    .input('taddr', sql.NVarChar, request.siteAddress)
+    .input('tournhost', sql.NVarChar, club.clubName)
+    .input('site', sql.NVarChar, request.site)
+    .input('numberOfTeams', sql.Int, request.numberOfTeams)
+    .input('minimumNumberOfTeams', sql.Int, request.minimumNumberOfTeams)
+    .input('agedivision', sql.NVarChar, 'Juniors')
+    .input('division', sql.NVarChar, request.division)
+    .input('entryFee', sql.Money, request.entryFee)
+    .input('paymentType', sql.VarChar, request.paymentType)
+    .input('checkPayableTo', sql.NVarChar, request.checkPayableTo)
+    .input('creditCardPayment', sql.Char, request.creditCardPayment)
+    .input('paymentUrl', sql.NVarChar, request.paymentUrl)
+    .input('awards', sql.NVarChar, request.awards)
+    .input('poolPlay', sql.NVarChar, request.poolPlay)
+    .input('playoffFormat', sql.NVarChar, request.playoffFormat)
+    .input('quarterFinals', sql.NVarChar, request.quarterFinals)
+    .input('semiFinals', sql.NVarChar, request.semiFinals)
+    .input('finals', sql.NVarChar, request.finals)
+    .input('lockerRoom', sql.NVarChar, request.lockerRoom)
+    .input('showers', sql.NVarChar, request.showers)
+    .input('food', sql.NVarChar, request.food)
+    .input('type', sql.NVarChar, request.type)
+    .input('hdp', sql.Char, request.hdp)
+    .input('season', sql.Char, config.currentSeason)
+    .input('tournamentContactAddress', sql.NVarChar, request.tournamentContactAddress)
+    .input('tournamentDirectorName', sql.NVarChar, request.tournamentDirectorName)
+    .input('tournamentDirectorEmail', sql.NVarChar, request.tournamentDirectorEmail)
+    .input('tournamentDirectorHomePhone', sql.NVarChar, request.tournamentDirectorHomePhone)
+    .input('tournamentDirectorTournamentPhone', sql.NVarChar, request.tournamentDirectorTournamentPhone)
+    .input('expenseFacility', sql.Decimal(10, 2), request.expenseFacility)
+    .input('expenseSanctionFees', sql.Decimal(10, 2), request.expenseSanctionFees)
+    .input('expenseOfficialsFees', sql.Decimal(10, 2), request.expenseOfficialsFees)
+    .input('expenseVolleyballs', sql.Decimal(10, 2), request.expenseVolleyballs)
+    .input('expenseAwards', sql.Decimal(10, 2), request.expenseAwards)
+    .input('expenseSupplies', sql.Decimal(10, 2), request.expenseSupplies)
+    .input('expenseOther', sql.Decimal(10, 2), request.expenseOther)
+    .input('expenseTotals', sql.Decimal(10, 2), request.expenseTotals)
+    .input('fee', sql.Decimal(10, 2), request.fee)
+    .input('teams', sql.Int, request.teams)
+    .input('totalbox', sql.Decimal(10, 2), request.totalbox)
+    .input('otherIncome', sql.Decimal(10, 2), request.otherIncome)
+    .input('netIncome', sql.Decimal(10, 2), request.netIncome)
+    .input('tournamentContactName', sql.NVarChar, request.tournamentContactName)
+    .input('information', sql.Text, request.information)
+    .input('singleAgeGroupOpen', sql.VarChar, request.singleAgeGroupOpen)
+    .input('requester', sql.NVarChar, request.requester)
+    .query(`
+      insert into sanction_requested (
+        sanctionid,
+        dte,
+        startTime,
+        clubcode,
+        tournname,
+        taddr,
+        tournhost,
+        site,
+        number_of_teams,
+        min_number_of_teams,
+        agedivision,
+        division,
+        entry_fee,
+        paymentType,
+        check_payable_to,
+        CCPayment,
+        paymentURL,
+        awards,
+        display_this_record,
+        pool_play,
+        playoff_format,
+        qtr_finals,
+        semi_finals,
+        finals,
+        locker_room,
+        showers,
+        food,
+        type,
+        status,
+        priority,
+        HDP,
+        season,
+        TournamentContact_address,
+        TournamentDirector_Name,
+        TournamentDirector_Email,
+        TournamentDirector_homePhone,
+        TournamentDirector_TournamentPhone,
+        Expense_facility,
+        Expense_sanctionFees,
+        Expense_officialsFees,
+        Expense_volleyballs,
+        Expense_awards,
+        Expense_supplies,
+        Expense_other,
+        Expense_totals,
+        fee,
+        teams,
+        totalbox,
+        otherIncome,
+        netIncome,
+        TournamentContact_name,
+        information,
+        SAGO,
+        sanctionStatus,
+        feeincrease,
+        requester,
+        posted
+      )
+      output inserted.id, inserted.sanctionid, inserted.sanctionStatus, inserted.submitDate
+      values (
+        @sanctionid,
+        @dte,
+        @startTime,
+        @clubcode,
+        @tournname,
+        @taddr,
+        @tournhost,
+        @site,
+        @numberOfTeams,
+        @minimumNumberOfTeams,
+        @agedivision,
+        @division,
+        @entryFee,
+        @paymentType,
+        @checkPayableTo,
+        @creditCardPayment,
+        @paymentUrl,
+        @awards,
+        'No',
+        @poolPlay,
+        @playoffFormat,
+        @quarterFinals,
+        @semiFinals,
+        @finals,
+        @lockerRoom,
+        @showers,
+        @food,
+        @type,
+        null,
+        0,
+        @hdp,
+        @season,
+        @tournamentContactAddress,
+        @tournamentDirectorName,
+        @tournamentDirectorEmail,
+        @tournamentDirectorHomePhone,
+        @tournamentDirectorTournamentPhone,
+        @expenseFacility,
+        @expenseSanctionFees,
+        @expenseOfficialsFees,
+        @expenseVolleyballs,
+        @expenseAwards,
+        @expenseSupplies,
+        @expenseOther,
+        @expenseTotals,
+        @fee,
+        @teams,
+        @totalbox,
+        @otherIncome,
+        @netIncome,
+        @tournamentContactName,
+        @information,
+        @singleAgeGroupOpen,
+        'Pending',
+        'N',
+        @requester,
+        'N'
+      )
+    `);
+
+  const created = result.recordset[0];
+
+  return {
+    id: String(created.id),
+    sanctionId: text(created.sanctionid),
+    status: text(created.sanctionStatus),
+    submittedDate: toDate(created.submitDate)
+  };
+}
+
 export async function searchClubs(filters) {
   const pool = await getPool();
   const request = pool.request();
@@ -56,6 +424,8 @@ export async function searchClubs(filters) {
       club_web_page,
       comments,
       active,
+      username,
+      password,
       clubType,
       inAttendance2024,
       inAttendance2023,
@@ -119,6 +489,8 @@ export async function createClub(body) {
     .input('website', sql.NVarChar, club.website)
     .input('email', sql.NVarChar, club.email)
     .input('alternateEmail', sql.NVarChar, club.alternateEmail)
+    .input('username', sql.NVarChar, club.username)
+    .input('password', sql.NVarChar, club.password)
     .input('comments', sql.NVarChar, club.comments)
     .input('clubType', sql.NVarChar, club.clubType)
     .input('active', sql.NChar, club.active)
@@ -140,6 +512,8 @@ export async function createClub(body) {
         club_web_page,
         email,
         altEmail,
+        username,
+        password,
         comments,
         grouping,
         clubType,
@@ -162,6 +536,8 @@ export async function createClub(body) {
         @website,
         @email,
         @alternateEmail,
+        @username,
+        @password,
         @comments,
         'Juniors',
         @clubType,
@@ -215,6 +591,8 @@ export async function updateClub(clubCode, body) {
     .input('website', sql.NVarChar, club.website)
     .input('email', sql.NVarChar, club.email)
     .input('alternateEmail', sql.NVarChar, club.alternateEmail)
+    .input('username', sql.NVarChar, club.username)
+    .input('password', sql.NVarChar, club.password)
     .input('comments', sql.NVarChar, club.comments)
     .input('clubType', sql.NVarChar, club.clubType)
     .input('active', sql.NChar, club.active)
@@ -236,6 +614,8 @@ export async function updateClub(clubCode, body) {
         club_web_page = @website,
         email = @email,
         altEmail = @alternateEmail,
+        username = @username,
+        password = @password,
         comments = @comments,
         clubType = @clubType,
         active = @active
@@ -464,6 +844,8 @@ async function getClubByCode(clubCode) {
         club_web_page,
         comments,
         active,
+        username,
+        password,
         clubType,
         inAttendance2024,
         inAttendance2023,
@@ -492,6 +874,8 @@ function mapClub(row) {
     phoneSecondary: text(row.phone2),
     email: text(row.email),
     alternateEmail: text(row.altEmail),
+    username: text(row.username),
+    password: text(row.password),
     active: text(row.active) !== 'N',
     clubType: text(row.clubType),
     comments: text(row.comments),
@@ -724,6 +1108,103 @@ export async function updateTournamentOkToPay(tournamentId, body) {
   };
 }
 
+async function getSanctionClub(pool, clubCode) {
+  const result = await pool.request()
+    .input('clubCode', sql.NVarChar, clubCode)
+    .query(`
+      select top 1 ClubCode, ClubName
+      from clubcontacts
+      where ClubCode = @clubCode
+    `);
+
+  if (result.recordset.length === 0) {
+    const error = new Error('Club was not found.');
+    error.statusCode = 404;
+    error.code = 'ERR_CLUB_NOT_FOUND';
+    throw error;
+  }
+
+  return mapSanctionClub(result.recordset[0]);
+}
+
+async function getRenewalStatuses(pool, clubCode, sanctionIds) {
+  const statuses = new Map();
+
+  if (sanctionIds.length === 0) {
+    return statuses;
+  }
+
+  const request = pool.request()
+    .input('clubCode', sql.NVarChar, clubCode);
+  const placeholders = sanctionIds.map((sanctionId, index) => {
+    const name = `sanctionId${index}`;
+    request.input(name, sql.NVarChar, sanctionId);
+    return `@${name}`;
+  });
+  const result = await request.query(`
+    select sanctionid, sanctionStatus
+    from sanction_requested
+    where clubcode = @clubCode
+      and sanctionid in (${placeholders.join(', ')})
+  `);
+
+  for (const row of result.recordset) {
+    statuses.set(text(row.sanctionid), text(row.sanctionStatus));
+  }
+
+  return statuses;
+}
+
+async function queryOptional(pool, query) {
+  try {
+    const result = await pool.request().query(query);
+    return result.recordset;
+  } catch (error) {
+    if (error.code === 'EREQUEST' && /Invalid object name/i.test(error.message)) {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
+function mapSanctionClub(row) {
+  return {
+    clubCode: text(row.ClubCode),
+    clubName: text(row.ClubName)
+  };
+}
+
+function seasonSuffix(season) {
+  return `_${String(season).replace(/^20/, '')}`;
+}
+
+function addWeeksDate(value, weeks) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  date.setDate(date.getDate() + (weeks * 7));
+  return toDate(date);
+}
+
+function buildStartTimes() {
+  const times = [];
+  const current = new Date('2000-01-01T08:00:00');
+  const end = new Date('2000-01-01T15:00:00');
+
+  while (current <= end) {
+    times.push(current.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit'
+    }));
+    current.setMinutes(current.getMinutes() + 15);
+  }
+
+  return times;
+}
+
 async function getPool() {
   poolPromise ??= sql.connect(await readDbConfig());
   return poolPromise;
@@ -772,6 +1253,133 @@ function addExactDate(where, request, name, column, value) {
   where.push(`cast(${column} as date) = @${name}`);
 }
 
+function normalizeSanctionRequestInput(body) {
+  const numberOfTeams = wholeNumber(body?.numberOfTeams);
+  const entryFee = money(body?.entryFee);
+  const expenseSanctionFees = numberOfTeams * 7;
+  const totalbox = entryFee * numberOfTeams;
+  const expenseFacility = money(body?.expenseFacility);
+  const expenseOfficialsFees = money(body?.expenseOfficialsFees);
+  const expenseVolleyballs = money(body?.expenseVolleyballs);
+  const expenseAwards = money(body?.expenseAwards);
+  const expenseSupplies = money(body?.expenseSupplies);
+  const expenseOther = money(body?.expenseOther);
+  const expenseTotals = expenseFacility
+    + expenseSanctionFees
+    + expenseOfficialsFees
+    + expenseVolleyballs
+    + expenseAwards
+    + expenseSupplies
+    + expenseOther;
+  const otherIncome = money(body?.otherIncome);
+  const paymentTypes = Array.isArray(body?.paymentType)
+    ? body.paymentType.map(text).filter(Boolean)
+    : text(body?.paymentType).split(',').map(text).filter(Boolean);
+
+  return {
+    tournamentContactName: text(body?.tournamentContactName),
+    tournamentDirectorName: text(body?.tournamentDirectorName),
+    tournamentContactAddress: text(body?.tournamentContactAddress),
+    tournamentDirectorEmail: text(body?.tournamentDirectorEmail),
+    tournamentDirectorHomePhone: text(body?.tournamentDirectorHomePhone),
+    tournamentDirectorTournamentPhone: text(body?.tournamentDirectorTournamentPhone),
+    date: text(body?.date),
+    startTime: parseStartTime(body?.startTime),
+    division: text(body?.division),
+    numberOfTeams,
+    minimumNumberOfTeams: nullableWholeNumber(body?.minimumNumberOfTeams),
+    tournamentName: text(body?.tournamentName),
+    site: text(body?.site),
+    siteAddress: text(body?.siteAddress),
+    type: text(body?.type),
+    entryFee,
+    checkPayableTo: text(body?.checkPayableTo),
+    paymentType: paymentTypes.join(', '),
+    creditCardPayment: paymentTypes.includes('Credit Card') ? 'Y' : 'N',
+    paymentUrl: text(body?.paymentUrl),
+    singleAgeGroupOpen: yn(body?.singleAgeGroupOpen),
+    hdp: yn(body?.hdp),
+    poolPlay: text(body?.poolPlay),
+    playoffFormat: text(body?.playoffFormat),
+    quarterFinals: text(body?.quarterFinals),
+    semiFinals: text(body?.semiFinals),
+    finals: text(body?.finals),
+    showers: text(body?.showers),
+    awards: text(body?.awards),
+    food: text(body?.food),
+    lockerRoom: text(body?.lockerRoom),
+    information: text(body?.information),
+    requester: text(body?.requester),
+    expenseFacility,
+    expenseSanctionFees,
+    expenseOfficialsFees,
+    expenseVolleyballs,
+    expenseAwards,
+    expenseSupplies,
+    expenseOther,
+    expenseTotals,
+    fee: entryFee,
+    teams: numberOfTeams,
+    totalbox,
+    otherIncome,
+    netIncome: otherIncome + totalbox - expenseTotals
+  };
+}
+
+function validateSanctionRequest(request) {
+  const required = [
+    ['tournamentContactName', 'Club Contact Name'],
+    ['tournamentDirectorName', 'Tournament Director Name'],
+    ['tournamentContactAddress', 'Tournament Contact Address'],
+    ['tournamentDirectorEmail', 'Tournament Director Email'],
+    ['tournamentDirectorHomePhone', 'Tournament Director Phone'],
+    ['tournamentDirectorTournamentPhone', 'Cell Phone'],
+    ['date', 'Tournament Date'],
+    ['startTime', 'Start Time'],
+    ['division', 'Age Group'],
+    ['tournamentName', 'Tournament Name'],
+    ['site', 'Tournament Site'],
+    ['siteAddress', 'Tournament Address'],
+    ['type', 'Type'],
+    ['checkPayableTo', 'Make Check Payable To'],
+    ['paymentType', 'Accepted Payment Types'],
+    ['requester', 'Person Submitting Request']
+  ];
+  const errors = required
+    .filter(([key]) => !request[key])
+    .map(([, label]) => `${label} is required.`);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(request.date)) {
+    errors.push('Tournament Date must be a valid date.');
+  }
+
+  if (!request.numberOfTeams || request.numberOfTeams <= 0) {
+    errors.push('Number of Teams must be greater than 0.');
+  }
+
+  if (request.minimumNumberOfTeams != null && request.minimumNumberOfTeams <= 0) {
+    errors.push('Minimum Teams must be greater than 0.');
+  }
+
+  if (!request.entryFee || request.entryFee <= 0) {
+    errors.push('Tournament Fee must be greater than 0.');
+  }
+
+  if (request.tournamentDirectorEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(request.tournamentDirectorEmail)) {
+    errors.push('Tournament Director Email must be valid.');
+  }
+
+  if (request.paymentType.length > 50) {
+    errors.push('Accepted Payment Types must be 50 characters or fewer.');
+  }
+
+  if (request.netIncome > 250) {
+    errors.push('Net Income exceeds a valid limit. Modify your tournament fee or worksheet.');
+  }
+
+  return errors;
+}
+
 function normalizeClubInput(body) {
   return {
     clubCode: text(body?.clubCode).toUpperCase(),
@@ -790,6 +1398,8 @@ function normalizeClubInput(body) {
     website: normalizeWebsite(body?.website),
     email: text(body?.email),
     alternateEmail: text(body?.alternateEmail),
+    username: text(body?.username),
+    password: text(body?.password),
     comments: text(body?.comments),
     clubType: text(body?.clubType) || 'G',
     active: body?.active === false ? 'N' : 'Y'
@@ -818,6 +1428,10 @@ function validateClub(club) {
 
   if (club.state.length > 2) {
     errors.push('State must be 2 characters.');
+  }
+
+  if (club.password.length > 15) {
+    errors.push('Password must be 15 characters or fewer.');
   }
 
   return errors;
@@ -871,6 +1485,31 @@ function normalizeNullableDate(value) {
   return normalized;
 }
 
+function parseStartTime(value) {
+  const normalized = text(value);
+  const match = normalized.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+
+  if (!match) {
+    return null;
+  }
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3].toUpperCase();
+
+  if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  if (meridiem === 'PM' && hours !== 12) {
+    hours += 12;
+  } else if (meridiem === 'AM' && hours === 12) {
+    hours = 0;
+  }
+
+  return new Date(1970, 0, 1, hours, minutes, 0);
+}
+
 function toTime(value) {
   if (!value) {
     return null;
@@ -890,4 +1529,29 @@ function toNumber(value) {
 
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function money(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Number(number.toFixed(2)) : 0;
+}
+
+function wholeNumber(value) {
+  const number = Number(value);
+  return Number.isInteger(number) ? number : 0;
+}
+
+function nullableWholeNumber(value) {
+  const normalized = text(value);
+
+  if (!normalized) {
+    return null;
+  }
+
+  const number = Number(normalized);
+  return Number.isInteger(number) ? number : 0;
+}
+
+function yn(value) {
+  return text(value).toUpperCase() === 'Y' ? 'Y' : 'N';
 }

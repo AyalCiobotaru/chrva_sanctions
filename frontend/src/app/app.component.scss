@@ -67,6 +67,13 @@ nav a:hover,
   gap: 14px;
 }
 
+.session-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.club-session,
 .session {
   align-items: center;
   border-left: 1px solid #d7dee8;
@@ -75,12 +82,14 @@ nav a:hover,
   padding-left: 14px;
 }
 
+.club-session span,
 .session span {
   color: #526071;
   font-size: 13px;
   font-weight: 700;
 }
 
+.club-session button,
 .session button {
   background: #ffffff;
   border: 1px solid #b8c5d6;
@@ -91,8 +100,79 @@ nav a:hover,
   padding: 8px 10px;
 }
 
+.club-session button:hover,
 .session button:hover {
   background: #f0f4f8;
+}
+
+.section-switcher {
+  position: relative;
+}
+
+.menu-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #b8c5d6;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 36px;
+  justify-content: center;
+  padding: 0;
+  width: 40px;
+}
+
+.menu-button span {
+  background: #34465c;
+  border-radius: 999px;
+  display: block;
+  height: 2px;
+  width: 18px;
+}
+
+.menu-button:hover,
+.menu-button[aria-expanded='true'] {
+  background: #e8eef6;
+}
+
+.section-menu {
+  background: #ffffff;
+  border: 1px solid #c8d3e0;
+  border-radius: 6px;
+  box-shadow: 0 16px 34px rgba(31, 45, 61, 0.16);
+  display: grid;
+  gap: 4px;
+  min-width: 260px;
+  padding: 6px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+}
+
+.section-menu button {
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: #27384c;
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 3px;
+  padding: 10px;
+  text-align: left;
+}
+
+.section-menu button:hover,
+.section-menu button.active {
+  background: #e8eef6;
+}
+
+.section-menu span {
+  color: #637083;
+  font-size: 12px;
 }
 
 main {
@@ -114,14 +194,22 @@ main {
   }
 
   .topbar-actions,
+  .session-actions,
+  .club-session,
   .session {
     align-items: flex-start;
     flex-direction: column;
   }
 
+  .club-session,
   .session {
     border-left: 0;
     padding-left: 0;
+  }
+
+  .section-menu {
+    left: 0;
+    right: auto;
   }
 
   main {

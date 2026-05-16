@@ -9,11 +9,18 @@ import {
   ClubEmailBroadcastRequest,
   ClubEmailBroadcastResult,
   AuthSession,
+  CreateSanctionRequestResult,
   CoordinatorSearch,
   CoordinatorSummary,
   LegacyConfig,
   MigrationInventory,
   NewClubRequest,
+  NewSanctionRequest,
+  CurrentSanctionRequestsResult,
+  SanctionClubLoginRequest,
+  SanctionClubSession,
+  SanctionHistoryResult,
+  SanctionRequestFormOptions,
   TournamentSearch,
   TournamentSummary,
   UpdateTournamentAddedToAesRequest,
@@ -43,6 +50,34 @@ export class ChrvaApiService {
 
   logout(): Observable<AuthSession> {
     return this.http.post<AuthSession>(`${this.baseUrl}/auth/logout`, {});
+  }
+
+  getSanctionClubSession(): Observable<SanctionClubSession> {
+    return this.http.get<SanctionClubSession>(`${this.baseUrl}/sanction-requests/auth/session`);
+  }
+
+  loginSanctionClub(credentials: SanctionClubLoginRequest): Observable<SanctionClubSession> {
+    return this.http.post<SanctionClubSession>(`${this.baseUrl}/sanction-requests/auth/login`, credentials);
+  }
+
+  logoutSanctionClub(): Observable<SanctionClubSession> {
+    return this.http.post<SanctionClubSession>(`${this.baseUrl}/sanction-requests/auth/logout`, {});
+  }
+
+  getSanctionHistory(): Observable<SanctionHistoryResult> {
+    return this.http.get<SanctionHistoryResult>(`${this.baseUrl}/sanction-requests/history`);
+  }
+
+  getCurrentSanctionRequests(): Observable<CurrentSanctionRequestsResult> {
+    return this.http.get<CurrentSanctionRequestsResult>(`${this.baseUrl}/sanction-requests/current`);
+  }
+
+  getSanctionRequestFormOptions(): Observable<SanctionRequestFormOptions> {
+    return this.http.get<SanctionRequestFormOptions>(`${this.baseUrl}/sanction-requests/form-options`);
+  }
+
+  createSanctionRequest(request: NewSanctionRequest): Observable<CreateSanctionRequestResult> {
+    return this.http.post<CreateSanctionRequestResult>(`${this.baseUrl}/sanction-requests`, request);
   }
 
   searchClubs(search: ClubSearch): Observable<ClubSearchResult> {

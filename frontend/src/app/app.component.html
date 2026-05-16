@@ -9,30 +9,68 @@
     </a>
 
     @if (session$ | async; as session) {
-      <div class="topbar-actions">
-        <nav aria-label="Primary">
-          @for (item of navItems; track item) {
-            @if (canShowNavItem(item, session)) {
-              <a
-                [routerLink]="item.path"
-                routerLinkActive="active"
-                [routerLinkActiveOptions]="{ exact: item.path === '/' }"
-                >
-                {{ item.label }}
-              </a>
+      @if (clubSession$ | async; as clubSession) {
+        <div class="topbar-actions">
+          <nav [attr.aria-label]="activeSectionLabel + ' navigation'">
+            @for (item of activeNavItems; track item.path) {
+              @if (canShowNavItem(item, session)) {
+                <a [routerLink]="item.path" routerLinkActive="active">
+                  {{ item.label }}
+                </a>
+              }
             }
-          }
-        </nav>
+          </nav>
 
-        @if (session.authenticated && session.user) {
-          <div class="session">
-            <span>{{ session.user.displayName }}</span>
-            <button type="button" (click)="logout()">Sign out</button>
+          <div class="session-actions">
+            @if (activeSection === 'clubs' && clubSession.authenticated && clubSession.club) {
+              <div class="club-session">
+                <span>{{ clubSession.club.clubCode }}</span>
+                <button type="button" (click)="logoutClub()">Club Logout</button>
+              </div>
+            }
+
+            @if (session.authenticated && session.user) {
+              <div class="session">
+                <span>{{ session.user.displayName }}</span>
+                <button type="button" (click)="logout()">Sign out</button>
+              </div>
+            } @else {
+              <a routerLink="/login" class="login-link" routerLinkActive="active">Sign in</a>
+            }
+
+            <div class="section-switcher">
+              <button
+                type="button"
+                class="menu-button"
+                aria-label="Switch navigation section"
+                [attr.aria-expanded]="menuOpen"
+                aria-haspopup="menu"
+                (click)="toggleMenu()"
+                >
+                <span></span>
+                <span></span>
+                <span></span>
+              </button>
+
+              @if (menuOpen) {
+                <div class="section-menu" role="menu">
+                  @for (section of navSections; track section.id) {
+                    <button
+                      type="button"
+                      role="menuitem"
+                      [class.active]="activeSection === section.id"
+                      (click)="switchSection(section.id)"
+                      >
+                      <strong>{{ section.label }}</strong>
+                      <span>{{ section.description }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
           </div>
-        } @else {
-          <a routerLink="/login" class="login-link" routerLinkActive="active">Sign in</a>
-        }
-      </div>
+        </div>
+      }
     }
   </header>
 

@@ -1,6 +1,7 @@
 import { createHmac, scryptSync, timingSafeEqual } from 'node:crypto';
 
 const cookieName = 'chrva_session';
+const clubCookieName = 'chrva_club_session';
 const sessionMaxAgeSeconds = 60 * 60 * 8;
 
 const users = [
@@ -51,6 +52,26 @@ export function clearSessionCookie(request) {
   return `${cookieName}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secure}`;
 }
 
+export function createClubSessionCookie(club, request) {
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    sub: club.clubCode,
+    name: club.clubName,
+    iat: now,
+    exp: now + sessionMaxAgeSeconds
+  };
+  const token = signPayload(payload);
+  const secure = isSecureRequest(request) ? '; Secure' : '';
+
+  return `${clubCookieName}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${sessionMaxAgeSeconds}${secure}`;
+}
+
+export function clearClubSessionCookie(request) {
+  const secure = isSecureRequest(request) ? '; Secure' : '';
+
+  return `${clubCookieName}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secure}`;
+}
+
 export function getSessionUser(request) {
   const token = parseCookies(request.headers.cookie ?? '')[cookieName];
 
@@ -66,6 +87,25 @@ export function getSessionUser(request) {
 
   const user = users.find((candidate) => candidate.username === payload.sub && candidate.role === payload.role);
   return user ? publicUser(user) : null;
+}
+
+export function getClubSession(request) {
+  const token = parseCookies(request.headers.cookie ?? '')[clubCookieName];
+
+  if (!token) {
+    return null;
+  }
+
+  const payload = verifyToken(token);
+
+  if (!payload) {
+    return null;
+  }
+
+  return {
+    clubCode: payload.sub,
+    clubName: payload.name
+  };
 }
 
 export function requireSession(request) {
@@ -86,6 +126,16 @@ export function requireRole(request, role) {
   }
 
   return user;
+}
+
+export function requireClubSession(request) {
+  const club = getClubSession(request);
+
+  if (!club) {
+    throw httpError(401, 'Club login required.', 'ERR_CLUB_UNAUTHENTICATED');
+  }
+
+  return club;
 }
 
 function isPasswordMatch(user, password) {
