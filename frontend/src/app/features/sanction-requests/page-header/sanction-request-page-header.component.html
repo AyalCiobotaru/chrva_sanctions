@@ -1,0 +1,12 @@
+<section class="request-header">
+  <div>
+    <p class="eyebrow">Tournament Sanctions</p>
+    <h1>{{ title }}</h1>
+  </div>
+
+  @if (session$ | async; as session) {
+    @if (session.club) {
+      <p class="club">{{ session.club.clubCode }} · {{ session.club.clubName }}</p>
+    }
+  }
+</section>

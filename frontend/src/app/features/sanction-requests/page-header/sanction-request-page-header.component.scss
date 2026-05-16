@@ -1,0 +1,37 @@
+.request-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  color: #6a3d09;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+}
+
+.club {
+  color: #526071;
+  font-weight: 700;
+  margin: 5px 0 0;
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .request-header {
+    flex-direction: column;
+  }
+
+  .club {
+    text-align: left;
+  }
+}

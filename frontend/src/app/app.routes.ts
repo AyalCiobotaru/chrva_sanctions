@@ -1,15 +1,40 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { sanctionClubGuard } from './core/sanction-club.guard';
 import { ClubsPageComponent } from './features/clubs/clubs-page.component';
 import { CoordinatorsPageComponent } from './features/coordinators/coordinators-page.component';
 import { LoginPageComponent } from './features/login/login-page.component';
 import { MigrationPageComponent } from './features/migration/migration-page.component';
 import { OverviewPageComponent } from './features/overview/overview-page.component';
+import { CurrentSanctionRequestsPageComponent } from './features/sanction-requests/current/current-sanction-requests-page.component';
+import { SanctionHistoryPageComponent } from './features/sanction-requests/history/sanction-history-page.component';
+import { SanctionRequestFormPageComponent } from './features/sanction-requests/form/sanction-request-form-page.component';
+import { SanctionRequestLoginPageComponent } from './features/sanction-requests/login/sanction-request-login-page.component';
 import { TournamentsPageComponent } from './features/tournaments/tournaments-page.component';
 
 export const routes: Routes = [
   { path: '', component: OverviewPageComponent, title: 'CHRVA Juniors Migration' },
   { path: 'login', component: LoginPageComponent, title: 'Sign in' },
+  { path: 'sanction-requests/login', component: SanctionRequestLoginPageComponent, title: 'Sanction Request Login' },
+  { path: 'sanction-requests', redirectTo: 'sanction-requests/history', pathMatch: 'full' },
+  {
+    path: 'sanction-requests/history',
+    component: SanctionHistoryPageComponent,
+    canActivate: [sanctionClubGuard],
+    title: 'Sanction History'
+  },
+  {
+    path: 'sanction-requests/current',
+    component: CurrentSanctionRequestsPageComponent,
+    canActivate: [sanctionClubGuard],
+    title: 'Current Sanction Requests'
+  },
+  {
+    path: 'sanction-requests/new',
+    component: SanctionRequestFormPageComponent,
+    canActivate: [sanctionClubGuard],
+    title: 'Sanction Form'
+  },
   { path: 'clubs', component: ClubsPageComponent, canActivate: [authGuard], title: 'Club Contacts' },
   { path: 'coordinators', component: CoordinatorsPageComponent, canActivate: [authGuard], title: 'Regional Junior Contacts' },
   { path: 'tournaments', component: TournamentsPageComponent, canActivate: [authGuard], title: 'Tournaments' },

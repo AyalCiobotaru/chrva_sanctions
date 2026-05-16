@@ -1,0 +1,300 @@
+<app-sanction-request-page-header title="Sanction Form" />
+
+@if (options$ | async; as options) {
+  <form class="request-form" [formGroup]="form" (ngSubmit)="submit()">
+    <section>
+      <h2>Club Information</h2>
+      <div class="field full">
+        <label>CHRVA Club Name</label>
+        <input [value]="options.club.clubName" readonly />
+      </div>
+      <label>
+        <span>Club Contact Name <span class="required">*</span></span>
+        <input formControlName="tournamentContactName" />
+      </label>
+      <label>
+        <span>Tournament Director Name <span class="required">*</span></span>
+        <input formControlName="tournamentDirectorName" />
+      </label>
+      <label class="full">
+        <span>Address / City / State / Zip <span class="required">*</span></span>
+        <input formControlName="tournamentContactAddress" />
+      </label>
+      <label>
+        <span>Tournament Director Email <span class="required">*</span></span>
+        <input type="email" formControlName="tournamentDirectorEmail" />
+      </label>
+      <label>
+        <span>Tournament Director Phone <span class="required">*</span></span>
+        <input formControlName="tournamentDirectorHomePhone" />
+      </label>
+      <label>
+        <span>Cell Phone <span class="required">*</span></span>
+        <input formControlName="tournamentDirectorTournamentPhone" />
+      </label>
+    </section>
+
+    <section>
+      <h2>Tournament Information</h2>
+      <label>
+        <span>Tournament Date <span class="required">*</span></span>
+        <input type="date" formControlName="date" />
+      </label>
+      <label>
+        <span>Start Time <span class="required">*</span></span>
+        <select formControlName="startTime">
+          @for (time of options.startTimes; track time) {
+            <option [value]="time">{{ time }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Age Group <span class="required">*</span></span>
+        <select formControlName="division">
+          <option value="">Select an age group</option>
+          @for (ageGroup of options.ageGroups; track ageGroup) {
+            <option [value]="ageGroup">{{ ageGroup }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Number of Teams <span class="required">*</span></span>
+        <input type="number" min="1" formControlName="numberOfTeams" />
+      </label>
+      <label>
+        Minimum Teams
+        <input type="number" min="1" formControlName="minimumNumberOfTeams" />
+      </label>
+      <label class="full">
+        <span>Tournament Name <span class="required">*</span></span>
+        <input formControlName="tournamentName" />
+      </label>
+      <label>
+        Select a Site
+        <select (change)="selectVenue($event, options.venues)">
+          <option value="">Select a venue</option>
+          @for (venue of options.venues; track venue.name + venue.address; let index = $index) {
+            <option [value]="index">{{ venue.name }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span>Tournament Site <span class="required">*</span></span>
+        <input formControlName="site" />
+      </label>
+      <label class="full">
+        <span>Tournament Address <span class="required">*</span></span>
+        <input formControlName="siteAddress" />
+      </label>
+      <label>
+        <span>Type <span class="required">*</span></span>
+        <select formControlName="type">
+          <option value="Mixed">Mixed</option>
+          <option value="Open">Open</option>
+          <option value="Club">Club</option>
+          <option value="Open/Club">Open/Club</option>
+        </select>
+      </label>
+      <label>
+        <span>Tournament Fee <span class="required">*</span></span>
+        <input type="number" min="0" formControlName="entryFee" />
+      </label>
+      <label>
+        <span>Make Check Payable To <span class="required">*</span></span>
+        <input formControlName="checkPayableTo" />
+      </label>
+      <app-multi-select-dropdown
+        formControlName="paymentType"
+        label="Accepted Payment Types *"
+        placeholder="Select payment types"
+        [options]="paymentTypeOptions"
+      ></app-multi-select-dropdown>
+      <label>
+        Stripe Email
+        <input formControlName="paymentUrl" />
+      </label>
+    </section>
+
+    <section>
+      <h2>Format And Amenities</h2>
+      <label>
+        Single Age Group Open
+        <select formControlName="singleAgeGroupOpen">
+          <option value="N">No</option>
+          <option value="Y">Yes</option>
+        </select>
+      </label>
+      <label>
+        HDP
+        <select formControlName="hdp">
+          <option value="N">No</option>
+          <option value="Y">Yes</option>
+        </select>
+      </label>
+      <label>
+        Pool Play
+        <select formControlName="poolPlay">
+          <option value="2 games of 25 points">2 sets of 25 points</option>
+          <option value="2 games of 21 points">2 sets of 21 points</option>
+          <option value="3 games of 25 points">3 sets of 25 points</option>
+          <option value="3 games of 21 points">3 sets of 21 points</option>
+          <option value="3 games of 19 points">3 sets of 19 points</option>
+          <option value="Match Play">Match Play</option>
+          <option value="Other">Other</option>
+        </select>
+      </label>
+      <label>
+        Playoff Format
+        <select formControlName="playoffFormat">
+          <option value="All teams into playoffs - Gold/Silver/Consolation">All teams into playoffs - Gold/Silver/Consolation</option>
+          <option value="Top 2 teams on each net">Top 2 teams on each net</option>
+          <option value="No Playoffs">No Playoffs</option>
+        </select>
+      </label>
+      <label>
+        Qtr Finals
+        <select formControlName="quarterFinals">
+          <option value="None">None</option>
+          <option value="Match Play">Match Play</option>
+        </select>
+      </label>
+      <label>
+        Semi Finals
+        <select formControlName="semiFinals">
+          <option value="None">None</option>
+          <option value="Match Play">Match Play</option>
+        </select>
+      </label>
+      <label>
+        Finals
+        <select formControlName="finals">
+          <option value="Match Play">Match Play</option>
+          <option value="None">None</option>
+        </select>
+      </label>
+      <label>
+        Showers
+        <select formControlName="showers">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </label>
+      <label>
+        Awards
+        <select formControlName="awards">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </label>
+      <label>
+        Food
+        <select formControlName="food">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+          <option value="Nearby">Nearby</option>
+        </select>
+      </label>
+      <label>
+        Lockers
+        <select formControlName="lockerRoom">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </label>
+      <label class="full">
+        Additional Information
+        <textarea rows="4" formControlName="information"></textarea>
+      </label>
+      <label class="full">
+        <span>Person Submitting Request <span class="required">*</span></span>
+        <input formControlName="requester" />
+      </label>
+    </section>
+
+    <section class="worksheet">
+      <h2>Income / Expense Worksheet</h2>
+      <p class="worksheet-note">
+        CHRVA tournaments cannot be run as profit events. The form calculates the worksheet totals as values change.
+      </p>
+
+      <div class="worksheet-grid">
+        <div class="worksheet-column">
+          <h3>Tournament Expenses</h3>
+          <label>
+            Facility charges
+            <input type="number" min="0" formControlName="expenseFacility" />
+          </label>
+          <label>
+            Sanction fee ($7.00 per team)
+            <input type="number" [value]="expenseSanctionFees" readonly />
+          </label>
+          <label>
+            Officials fees
+            <input type="number" min="0" formControlName="expenseOfficialsFees" />
+          </label>
+          <label>
+            New volleyballs
+            <input type="number" min="0" formControlName="expenseVolleyballs" />
+          </label>
+          <label>
+            Awards
+            <input type="number" min="0" formControlName="expenseAwards" />
+          </label>
+          <label>
+            Score/lineup sheets, pens, etc.
+            <input type="number" min="0" formControlName="expenseSupplies" />
+          </label>
+          <label>
+            Other expenses
+            <input type="number" min="0" formControlName="expenseOther" />
+          </label>
+          <div class="calculated-row">
+            <span>Total Expenses</span>
+            <strong>{{ expenseTotal | currency }}</strong>
+          </div>
+        </div>
+
+        <div class="worksheet-column">
+          <h3>Tournament Income</h3>
+          <div class="formula-row">
+            <span>Entry fee income</span>
+            <strong>{{ worksheetFee | currency }} x {{ expenseTeams || 0 }} teams = {{ entryFeeIncome | currency }}</strong>
+          </div>
+          <label>
+            Other income
+            <input type="number" min="0" formControlName="otherIncome" />
+          </label>
+          <div class="calculated-row">
+            <span>Net profit or loss</span>
+            <strong [class.warning]="isProfitTooHigh">{{ netIncome | currency }}</strong>
+          </div>
+
+          @if (isProfitTooHigh) {
+            <p class="worksheet-alert" role="alert">
+              CHRVA tournaments cannot be run as profit events. Review the worksheet and modify income or expenses.
+            </p>
+          }
+
+          <div class="math-summary">
+            <h3>Behind the Scenes</h3>
+            <p>Sanction fee = number of teams x $7.00.</p>
+            <p>Entry fee income = tournament fee x number of teams.</p>
+            <p>Total expenses = facility + sanction fee + officials + volleyballs + awards + supplies + other expenses.</p>
+            <p>Net profit/loss = other income + entry fee income - total expenses.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="actions">
+      @if (submitError) {
+        <p class="submit-error" role="alert">{{ submitError }}</p>
+      }
+      <span class="submit-tooltip" [title]="submitDisabledReason">
+        <button type="submit" [disabled]="form.invalid || submitting" [attr.aria-disabled]="form.invalid || submitting">
+          {{ submitting ? 'Submitting...' : 'Submit Request' }}
+        </button>
+      </span>
+    </div>
+  </form>
+}

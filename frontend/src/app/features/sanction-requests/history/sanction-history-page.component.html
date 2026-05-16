@@ -1,0 +1,47 @@
+<app-sanction-request-page-header title="Sanction History" />
+
+@if (history$ | async; as history) {
+  <section class="intro">
+    <p>
+      Below is the list of tournaments sanctioned for {{ history.club.clubName }} during the
+      {{ history.previousSeason }} season.
+    </p>
+  </section>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Week</th>
+        <th>Previous Date</th>
+        <th>Age</th>
+        <th>Type</th>
+        <th>Teams</th>
+        <th>Location</th>
+        <th>Renew {{ history.currentSeason }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (tournament of history.tournaments; track tournament.id) {
+        <tr [class.hdp]="tournament.hdp">
+          <td>{{ tournament.weekNumber }}</td>
+          <td>{{ tournament.date | date: 'MM/dd/yy' }}</td>
+          <td>{{ tournament.division.replace('Girls', '') }}</td>
+          <td>{{ tournament.type }}</td>
+          <td>{{ tournament.teamCount ?? 'TBD' }}</td>
+          <td>{{ tournament.site }}</td>
+          <td>
+            @if (tournament.renewalStatus) {
+              {{ tournament.renewalStatus }}
+            } @else {
+              {{ tournament.proposedRenewalDate | date: 'MM/dd/yyyy' }}
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="empty">No sanctioned tournament history was found for the previous season.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

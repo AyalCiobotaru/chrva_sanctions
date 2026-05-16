@@ -25,6 +25,7 @@ export class ClubFormComponent implements OnChanges {
   ];
 
   validationError = '';
+  showPassword = false;
 
   readonly form = this.fb.nonNullable.group({
     clubCode: ['', [Validators.required, Validators.maxLength(5)]],
@@ -40,6 +41,8 @@ export class ClubFormComponent implements OnChanges {
     phone2: '',
     email: ['', [Validators.required, Validators.email]],
     alternateEmail: '',
+    username: '',
+    password: '',
     website: '',
     clubTypes: [['G'] as string[], Validators.required],
     active: true,
@@ -80,8 +83,13 @@ export class ClubFormComponent implements OnChanges {
     this.cancelled.emit();
   }
 
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
   private resetForm(): void {
     this.validationError = '';
+    this.showPassword = false;
     this.form.reset({
       clubCode: this.club?.clubCode ?? '',
       clubName: this.club?.clubName ?? '',
@@ -96,6 +104,8 @@ export class ClubFormComponent implements OnChanges {
       phone2: this.club?.phoneSecondary ?? '',
       email: this.club?.email ?? '',
       alternateEmail: this.club?.alternateEmail ?? '',
+      username: this.club?.username ?? '',
+      password: this.club?.password ?? '',
       website: this.club?.website ?? '',
       clubTypes: this.toClubTypes(this.club?.clubType),
       active: this.club?.active ?? true,

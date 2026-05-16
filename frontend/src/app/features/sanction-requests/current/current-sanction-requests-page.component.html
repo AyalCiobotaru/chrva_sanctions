@@ -1,0 +1,52 @@
+<app-sanction-request-page-header title="Current Sanction Requests" />
+
+@if (current$ | async; as current) {
+  <section class="intro">
+    <p>
+      Current {{ current.currentSeason }} tournament sanction requests for {{ current.club.clubName }}.
+    </p>
+  </section>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Week</th>
+        <th>Date</th>
+        <th>Division</th>
+        <th>Level</th>
+        <th>Teams</th>
+        <th>Entry Fee</th>
+        <th>Tournament</th>
+        <th>Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (request of current.requests; track request.id) {
+        <tr [class.hdp]="request.hdp">
+          <td>{{ request.sanctionStatus }}</td>
+          <td>{{ request.weekNumber }}</td>
+          <td>{{ request.date | date: 'MM/dd/yy' }}</td>
+          <td>{{ request.division.replace('Girls', '') }}</td>
+          <td>{{ request.type }}</td>
+          <td>{{ request.teamCount ?? 'TBD' }}</td>
+          <td>{{ request.entryFee | currency }}</td>
+          <td>
+            {{ request.name }}
+            @if (request.sanctionNotes) {
+              <small><strong>Sanction Note:</strong> {{ request.sanctionNotes }}</small>
+            }
+            @if (request.tournamentNotes) {
+              <small><strong>Tournament Note:</strong> {{ request.tournamentNotes }}</small>
+            }
+          </td>
+          <td>{{ request.site }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="9" class="empty">No current sanction requests were found.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

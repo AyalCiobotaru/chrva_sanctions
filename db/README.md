@@ -11,6 +11,9 @@ The current Angular/API app needs these tables:
 - `clubcontacts`
 - `coordcontacts`
 - `sanction_requested`
+- `tournamentNotes`
+- `venues`
+- `tblagegroups`
 
 The broader ColdFusion inventory is reference material only. Do not copy legacy
 tables into the local database until a modern route, API workflow, or migration
@@ -60,15 +63,20 @@ routes:
 - all `coordcontacts`
 - active junior `clubcontacts`
 - inactive or non-junior `clubcontacts` referenced by seeded tournaments
-- `sanction_requested` rows for seasons 2025-2027 where the request is
-  approved, posted, SO, or has been added to AES
+- `sanction_requested` rows for seasons 2025-2027 needed by tournament and
+  sanction request workflows, including pending/question/cancelled requests
+- `tournamentNotes` rows for the seeded sanction requests
+- all `venues`
+- all `tblagegroups`
 
-`clubcontacts.password` is written as `NULL` in the seed.
+`clubcontacts.password` is written as `NULL` in the seed because the legacy
+passwords are plaintext. For local club-login testing, set a test password
+locally after seeding or point the test environment at a secured test database.
 
 Apply it locally:
 
 ```powershell
-.\db\scripts\apply-current-seed.ps1
+.\db\scripts\apply-current-seed.ps1 -Password "Your_Strong_Password_123!"
 ```
 
 ## Environment

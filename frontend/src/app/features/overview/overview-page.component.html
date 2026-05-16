@@ -1,11 +1,11 @@
 <section class="page">
   <div>
-    <p class="eyebrow">Migration Slice 1</p>
-    <h1>Public clubs and tournaments</h1>
+    <p class="eyebrow">Application Guide</p>
+    <h1>CHRVA Juniors workspace</h1>
     <p>
-      The modern application is now configured through explicit API
-      environments. Angular reads data contracts from the API and does not
-      read or link back to the prior server-rendered application.
+      Use the header menu to switch between the Admin tools and the Club
+      sanction request area. The Overview remains public; the rest of the
+      application is gated by the appropriate admin or club login.
     </p>
   </div>
 
@@ -28,27 +28,40 @@
   }
 </section>
 
-<section class="grid">
-  <article>
-    <h2>What moved first</h2>
-    <p>
-      Clubs, coordinators, and tournament searches are Angular routes backed
-      by SQL Server API contracts.
-    </p>
-  </article>
-  <article>
-    <h2>API responsibilities</h2>
-    <p>
-      SQL access, authentication, mail, exports, and validation belong in
-      the backend API. Angular owns navigation, views, forms, and client-side
-      validation.
-    </p>
-  </article>
-  <article>
-    <h2>Next migration target</h2>
-    <p>
-      Continue replacing public read-only workflows with explicit API
-      contracts before moving into authenticated administrative tools.
-    </p>
-  </article>
+<section class="readme">
+  <div>
+    <h2>Admin</h2>
+    <article>
+      <h3>Clubs</h3>
+      <p>Search, filter, add, edit, export, and manage club contact records.</p>
+    </article>
+    <article>
+      <h3>Coordinators</h3>
+      <p>Review regional coordinator contacts and assignments.</p>
+    </article>
+    <article>
+      <h3>Tournaments</h3>
+      <p>Browse sanctioned tournaments by season and update AES tracking fields.</p>
+    </article>
+    <article>
+      <h3>Migration</h3>
+      <p>Master-only inventory for legacy ColdFusion files, routes, and migration status.</p>
+    </article>
+  </div>
+
+  <div>
+    <h2>Clubs</h2>
+    <article>
+      <h3>Sanction History</h3>
+      <p>Shows prior sanctioned tournaments for the logged-in club and renewal context.</p>
+    </article>
+    <article>
+      <h3>Current Sanctions</h3>
+      <p>Shows active season requests, status, dates, divisions, locations, and notes.</p>
+    </article>
+    <article>
+      <h3>Sanction Request</h3>
+      <p>Starts a new tournament sanction request using club, venue, age group, and format data.</p>
+    </article>
+  </div>
 </section>

@@ -24,6 +24,133 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface SanctionClub {
+  clubCode: string;
+  clubName: string;
+}
+
+export interface SanctionClubSession {
+  authenticated: boolean;
+  club: SanctionClub | null;
+}
+
+export interface SanctionClubLoginRequest {
+  username: string;
+  password: string;
+  agree: boolean;
+  agreePenalties: boolean;
+}
+
+export interface SanctionHistoryItem {
+  id: string;
+  sanctionId: string;
+  renewalSanctionId: string;
+  date: string | null;
+  proposedRenewalDate: string | null;
+  weekNumber: number | null;
+  division: string;
+  type: string;
+  teamCount: number | null;
+  site: string;
+  hdp: boolean;
+  status: string;
+  sanctionStatus: string;
+  renewalStatus: string | null;
+}
+
+export interface SanctionHistoryResult {
+  club: SanctionClub;
+  previousSeason: string;
+  currentSeason: string;
+  tournaments: SanctionHistoryItem[];
+}
+
+export interface CurrentSanctionRequest {
+  id: string;
+  sanctionId: string;
+  sanctionStatus: string;
+  date: string | null;
+  weekNumber: number | null;
+  division: string;
+  type: string;
+  teamCount: number | null;
+  entryFee: number | null;
+  name: string;
+  site: string;
+  hdp: boolean;
+  sanctionNotes: string;
+  tournamentNotes: string;
+  canModify: boolean;
+}
+
+export interface CurrentSanctionRequestsResult {
+  club: SanctionClub;
+  currentSeason: string;
+  requests: CurrentSanctionRequest[];
+}
+
+export interface SanctionVenueOption {
+  name: string;
+  address: string;
+}
+
+export interface SanctionRequestFormOptions {
+  club: SanctionClub;
+  venues: SanctionVenueOption[];
+  ageGroups: string[];
+  startTimes: string[];
+}
+
+export interface NewSanctionRequest {
+  tournamentContactName: string;
+  tournamentDirectorName: string;
+  tournamentContactAddress: string;
+  tournamentDirectorEmail: string;
+  tournamentDirectorHomePhone: string;
+  tournamentDirectorTournamentPhone: string;
+  date: string;
+  startTime: string;
+  division: string;
+  numberOfTeams: string;
+  minimumNumberOfTeams: string;
+  tournamentName: string;
+  site: string;
+  siteAddress: string;
+  type: string;
+  entryFee: string;
+  checkPayableTo: string;
+  paymentType: string[];
+  creditCardPayment: string;
+  paymentUrl: string;
+  singleAgeGroupOpen: string;
+  hdp: string;
+  poolPlay: string;
+  playoffFormat: string;
+  quarterFinals: string;
+  semiFinals: string;
+  finals: string;
+  showers: string;
+  awards: string;
+  food: string;
+  lockerRoom: string;
+  information: string;
+  requester: string;
+  expenseFacility: string;
+  expenseOfficialsFees: string;
+  expenseVolleyballs: string;
+  expenseAwards: string;
+  expenseSupplies: string;
+  expenseOther: string;
+  otherIncome: string;
+}
+
+export interface CreateSanctionRequestResult {
+  id: string;
+  sanctionId: string;
+  status: string;
+  submittedDate: string | null;
+}
+
 export interface ClubSearch {
   clubName?: string;
   state?: string;
@@ -47,6 +174,8 @@ export interface ClubSummary {
   phoneSecondary?: string;
   email: string;
   alternateEmail: string;
+  username: string;
+  password: string;
   active: boolean;
   clubType: string;
   comments: string;
@@ -79,6 +208,8 @@ export interface NewClubRequest {
   website?: string;
   email: string;
   alternateEmail?: string;
+  username?: string;
+  password?: string;
   comments?: string;
   clubType?: string;
   active?: boolean;
