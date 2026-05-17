@@ -1,0 +1,199 @@
+<section class="scoring-shell">
+  <header class="page-header">
+    <div>
+      <p>Master prototype</p>
+      <h1>Outdoor Scoring</h1>
+    </div>
+    <div class="header-actions">
+      @if (realtimeStatus$ | async; as realtimeStatus) {
+        <span class="realtime-status" [class.connected]="realtimeStatus === 'connected'" [class.failed]="realtimeStatus === 'failed'">
+          @if (realtimeStatus === 'connected') {
+            Live sync on
+          } @else if (realtimeStatus === 'disabled') {
+            Local only
+          } @else if (realtimeStatus === 'failed') {
+            Live sync error
+          } @else {
+            Live sync {{ realtimeStatus }}
+          }
+        </span>
+      }
+      <button type="button" class="secondary" (click)="editingSetup = !editingSetup">
+        {{ editingSetup ? 'Show scoring' : 'Edit setup' }}
+      </button>
+    </div>
+  </header>
+
+  @if (!hasPool || editingSetup) {
+    <section class="setup-grid">
+      <div class="setup-panel camera-panel">
+        <h2>Scoresheet</h2>
+        <label class="camera-button">
+          <span>Take scoresheet photo</span>
+          <input type="file" accept="image/*" capture="environment" (change)="captureSheet($event)" />
+        </label>
+        @if (pool.imagePreview) {
+          <img [src]="pool.imagePreview" alt="Captured scoresheet preview" />
+        } @else {
+          <div class="preview-placeholder">No photo captured</div>
+        }
+      </div>
+
+      <div class="setup-panel">
+        <h2>Pool Setup</h2>
+        <label>
+          Pool title
+          <input [(ngModel)]="pool.title" (ngModelChange)="save()" />
+        </label>
+        <div class="inline-fields">
+          <label>
+            Teams
+            <input type="number" min="2" max="16" [(ngModel)]="pool.teamCount" />
+          </label>
+          <button type="button" class="secondary" (click)="applyTeamCount()">Apply</button>
+        </div>
+        <div class="inline-fields">
+          <label>
+            Games per match
+            <input type="number" min="1" max="5" [(ngModel)]="pool.gamesPerMatch" />
+          </label>
+          <label>
+            Target score
+            <input type="number" min="1" max="99" [(ngModel)]="pool.targetScore" />
+          </label>
+          <button type="button" class="secondary" (click)="applyGameFormat()">Apply</button>
+        </div>
+      </div>
+
+      <div class="setup-panel teams-panel">
+        <h2>Teams</h2>
+        @for (team of pool.teams; track team.seed) {
+          <label>
+            Seed {{ team.seed }}
+            <input [(ngModel)]="team.name" (ngModelChange)="save()" />
+          </label>
+        }
+      </div>
+
+      <div class="setup-panel schedule-panel">
+        <div class="section-title">
+          <h2>Schedule</h2>
+          <button type="button" (click)="addMatch()">Add match</button>
+        </div>
+
+        @if (pool.matches.length) {
+          <div class="schedule-rows">
+            @for (match of pool.matches; track match.id; let index = $index) {
+              <div class="schedule-row">
+                <strong>{{ index + 1 }}</strong>
+                <label>
+                  Ref
+                  <select [(ngModel)]="match.refSeed" (ngModelChange)="save()">
+                    <option [ngValue]="null">None</option>
+                    @for (team of pool.teams; track team.seed) {
+                      <option [ngValue]="team.seed">{{ team.seed }}</option>
+                    }
+                  </select>
+                </label>
+                <label>
+                  Team A
+                  <select [(ngModel)]="match.teamASeed" (ngModelChange)="save()">
+                    @for (team of pool.teams; track team.seed) {
+                      <option [ngValue]="team.seed">{{ team.seed }}</option>
+                    }
+                  </select>
+                </label>
+                <label>
+                  Team B
+                  <select [(ngModel)]="match.teamBSeed" (ngModelChange)="save()">
+                    @for (team of pool.teams; track team.seed) {
+                      <option [ngValue]="team.seed">{{ team.seed }}</option>
+                    }
+                  </select>
+                </label>
+                <button type="button" class="danger" (click)="removeMatch(match.id)">Remove</button>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty-copy">Add the match rows from the pool sheet in the same order they appear.</p>
+        }
+      </div>
+    </section>
+  }
+
+  @if (hasPool && !editingSetup) {
+    <section class="scoreboard">
+      <header>
+        <div>
+          <p>Current pool</p>
+          <h2>{{ pool.title }}</h2>
+        </div>
+        <button type="button" class="danger" (click)="resetPool()">Reset pool</button>
+      </header>
+
+      @if (activeMatch; as match) {
+        <section class="active-match" [ngClass]="{ final: match.final }">
+          <div class="match-heading">
+            <div>
+              <span class="status">{{ match.final ? 'Final' : pool.activeMatchId === match.id ? 'Live' : 'Ready' }}</span>
+              <h3>{{ teamName(match.teamASeed) }} vs {{ teamName(match.teamBSeed) }}</h3>
+              @if (match.refSeed) {
+                <p>Work team: {{ teamName(match.refSeed) }}</p>
+              }
+            </div>
+            @if (match.final) {
+              <button type="button" class="secondary" (click)="reopen(match)">Reopen</button>
+            } @else {
+              <button type="button" (click)="markFinal(match)">Mark final</button>
+            }
+          </div>
+
+          <div class="game-grid">
+            @for (game of match.games; track $index; let gameIndex = $index) {
+              <div class="game-panel">
+                <h4>Game {{ gameIndex + 1 }} to {{ pool.targetScore }}</h4>
+                <div class="score-columns">
+                  <div>
+                    <span>{{ teamName(match.teamASeed) }}</span>
+                    <input type="number" min="0" [(ngModel)]="game.scoreA" (ngModelChange)="normalizeScore(game, 'A')" [disabled]="match.final" />
+                    <div class="score-buttons">
+                      <button type="button" (click)="updateScore(match, game, 'A', -1)" [disabled]="match.final">-1</button>
+                      <button type="button" (click)="updateScore(match, game, 'A', 1)" [disabled]="match.final">+1</button>
+                    </div>
+                  </div>
+                  <div>
+                    <span>{{ teamName(match.teamBSeed) }}</span>
+                    <input type="number" min="0" [(ngModel)]="game.scoreB" (ngModelChange)="normalizeScore(game, 'B')" [disabled]="match.final" />
+                    <div class="score-buttons">
+                      <button type="button" (click)="updateScore(match, game, 'B', -1)" [disabled]="match.final">-1</button>
+                      <button type="button" (click)="updateScore(match, game, 'B', 1)" [disabled]="match.final">+1</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="match-list">
+        <h3>Match Order</h3>
+        @for (match of pool.matches; track match.id; let index = $index) {
+          <button
+            type="button"
+            [class.active]="pool.activeMatchId === match.id"
+            [class.final]="match.final"
+            (click)="startScoring(match)"
+          >
+            <span>{{ index + 1 }}</span>
+            <strong>{{ teamName(match.teamASeed) }} vs {{ teamName(match.teamBSeed) }}</strong>
+            @if (match.refSeed) {
+              <small>Work: {{ teamName(match.refSeed) }}</small>
+            }
+          </button>
+        }
+      </section>
+    </section>
+  }
+</section>

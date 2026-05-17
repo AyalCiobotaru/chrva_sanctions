@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Rest } from 'ably';
 import {
   authenticateUser,
   clearClubSessionCookie,
@@ -34,6 +35,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appRoot = join(__dirname, '..');
+let ablyRest;
 
 export async function handleApiRequest(request, response) {
   try {
@@ -139,6 +141,16 @@ export async function handleApiRequest(request, response) {
       return json(response, await migrationInventory());
     }
 
+    if (route === 'GET /api/outdoor-scoring/realtime-config') {
+      requireRole(request, 'master');
+      return json(response, { enabled: Boolean(process.env.ABLY_API_KEY) });
+    }
+
+    if (route === 'GET /api/outdoor-scoring/ably-token') {
+      requireRole(request, 'master');
+      return json(response, await createOutdoorScoringAblyTokenRequest());
+    }
+
     requireSession(request);
 
     if (route === 'GET /api/clubs') {
@@ -197,6 +209,29 @@ export async function handleApiRequest(request, response) {
       message: error.message
     }, status);
   }
+}
+
+async function createOutdoorScoringAblyTokenRequest() {
+  const key = process.env.ABLY_API_KEY;
+
+  if (!key) {
+    throw httpError(503, 'Ably is not configured.', 'ERR_ABLY_NOT_CONFIGURED');
+  }
+
+  ablyRest ??= new Rest({ key });
+  return ablyRest.auth.createTokenRequest({
+    ttl: 60 * 60 * 1000,
+    capability: JSON.stringify({
+      'chrva:outdoor-scoring:global': ['publish', 'subscribe', 'history']
+    })
+  });
+}
+
+function httpError(statusCode, message, code) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
 }
 
 async function migrationInventory() {

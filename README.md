@@ -59,6 +59,7 @@ The checked-in `.env.*.example` files document the required variables:
 - `CHRVA_SEASON_STATUS`
 - `CHRVA_SANCTION_STATUS`
 - `CHRVA_AUTH_SECRET`
+- `ABLY_API_KEY` for Outdoor Scoring live sync. Leave blank for local-only mode.
 
 On Vercel, add those same names as Project Environment Variables. Do not commit
 real SQL Server credentials.
