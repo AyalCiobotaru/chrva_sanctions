@@ -6,7 +6,6 @@ import { ClubsPageComponent } from './features/clubs/clubs-page.component';
 import { CoordinatorsPageComponent } from './features/coordinators/coordinators-page.component';
 import { LoginPageComponent } from './features/login/login-page.component';
 import { MigrationPageComponent } from './features/migration/migration-page.component';
-import { OutdoorScoringPageComponent } from './features/outdoor-scoring/outdoor-scoring-page.component';
 import { OverviewPageComponent } from './features/overview/overview-page.component';
 import { CurrentSanctionRequestsPageComponent } from './features/sanction-requests/current/current-sanction-requests-page.component';
 import { SanctionHistoryPageComponent } from './features/sanction-requests/history/sanction-history-page.component';
