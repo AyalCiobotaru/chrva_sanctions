@@ -308,6 +308,91 @@ export interface TournamentSummary {
   weekNumber: number | null;
 }
 
+export interface AdminSanctionRequestSearch {
+  season?: string;
+  divisions?: string;
+  clubCode?: string;
+  weekNumber?: string;
+  fromDate?: string;
+  toDate?: string;
+  status?: string;
+  tournamentType?: string;
+  hdpOnly?: string;
+  sagoOnly?: string;
+  duplicateSanctionId?: string;
+}
+
+export interface AdminSanctionRequestCounts {
+  total: number;
+  pending: number;
+  approved: number;
+  denied: number;
+  cancelled: number;
+  hdp: number;
+  sago: number;
+}
+
+export interface AdminSanctionRequestClubOption {
+  clubCode: string;
+  clubName: string;
+}
+
+export interface AdminSanctionRequestOptions {
+  seasons: string[];
+  ageGroups: string[];
+  clubs: AdminSanctionRequestClubOption[];
+}
+
+export interface AdminSanctionRequestSpecialDate {
+  id: string | null;
+  label: string;
+  notes: string;
+}
+
+export interface AdminSanctionRequestSummary {
+  id: string;
+  sanctionId: string;
+  sanctionStatus: string;
+  statusCode: string;
+  archiveStatus: string;
+  sanctionNotes: string;
+  submitDate: string | null;
+  date: string | null;
+  startTime: string | null;
+  closeDate: string | null;
+  priority: string | null;
+  division: string;
+  divisionLabel: string;
+  type: string;
+  teamCount: number | null;
+  entryFee: number | null;
+  name: string;
+  site: string;
+  clubCode: string;
+  clubName: string;
+  hdp: boolean;
+  sago: boolean;
+  addedToAes: boolean;
+  tournamentDirectorEmail: string;
+  tournamentDirectorName: string;
+  weekNumber: number | null;
+  specialDate: AdminSanctionRequestSpecialDate;
+  sanctionDivisionMismatch: boolean;
+}
+
+export interface DuplicateSanctionId {
+  sanctionId: string;
+  count: number;
+}
+
+export interface AdminCurrentSanctionRequestsResult {
+  season: string;
+  options: AdminSanctionRequestOptions;
+  counts: AdminSanctionRequestCounts;
+  duplicateSanctionIds: DuplicateSanctionId[];
+  requests: AdminSanctionRequestSummary[];
+}
+
 export interface UpdateTournamentAddedToAesRequest {
   addedToAesDate: string | null;
 }

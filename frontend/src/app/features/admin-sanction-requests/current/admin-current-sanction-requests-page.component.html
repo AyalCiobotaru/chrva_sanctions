@@ -1,0 +1,229 @@
+<section class="page-header">
+  <div>
+    <h1>Current Sanction Requests</h1>
+    <p>Review submitted tournament sanction requests by season, club, week, status, and division.</p>
+  </div>
+</section>
+
+@if (vm$ | async; as vm) {
+  <section class="summary-bar" aria-label="Request counts">
+    <button type="button" [class.active]="form.controls.status.value === 'all' && !form.controls.hdpOnly.value && !form.controls.sagoOnly.value" (click)="setStatus('all')">
+      <strong>{{ vm.counts.total }}</strong>
+      <span>All</span>
+    </button>
+    <button type="button" [class.active]="form.controls.status.value === 'pending'" (click)="setStatus('pending')">
+      <strong>{{ vm.counts.pending }}</strong>
+      <span>Pending</span>
+    </button>
+    <button type="button" [class.active]="form.controls.status.value === 'approved'" (click)="setStatus('approved')">
+      <strong>{{ vm.counts.approved }}</strong>
+      <span>Approved</span>
+    </button>
+    <button type="button" [class.active]="form.controls.status.value === 'denied'" (click)="setStatus('denied')">
+      <strong>{{ vm.counts.denied }}</strong>
+      <span>Denied</span>
+    </button>
+    <button type="button" [class.active]="form.controls.status.value === 'cancelled'" (click)="setStatus('cancelled')">
+      <strong>{{ vm.counts.cancelled }}</strong>
+      <span>Cancelled</span>
+    </button>
+    <button type="button" [class.active]="form.controls.hdpOnly.value" (click)="showHdpOnly()">
+      <strong>{{ vm.counts.hdp }}</strong>
+      <span>HDP</span>
+    </button>
+    <button type="button" [class.active]="form.controls.sagoOnly.value" (click)="showSagoOnly()">
+      <strong>{{ vm.counts.sago }}</strong>
+      <span>SAGO</span>
+    </button>
+  </section>
+
+  @if (vm.duplicateSanctionIds.length) {
+    <section class="warning-panel">
+      <strong>Duplicate sanction numbers found.</strong>
+      <span>The duplications must be corrected before these tournaments can be posted.</span>
+      <div>
+        @for (duplicate of vm.duplicateSanctionIds; track duplicate.sanctionId) {
+          <button type="button" (click)="showDuplicate(duplicate.sanctionId)">
+            {{ duplicate.sanctionId }} ({{ duplicate.count }})
+          </button>
+        }
+      </div>
+    </section>
+  }
+
+  <form [formGroup]="form" class="filters">
+    <label>
+      Season
+      <select formControlName="season">
+        @for (season of vm.options.seasons; track season) {
+          <option [value]="season">{{ season }}</option>
+        }
+      </select>
+    </label>
+
+    <app-multi-select-dropdown
+      formControlName="divisions"
+      label="Divisions"
+      placeholder="All divisions"
+      [options]="vm.divisionOptions"
+    ></app-multi-select-dropdown>
+
+    <label>
+      Club
+      <select formControlName="clubCode">
+        <option value="">All clubs</option>
+        @for (club of vm.options.clubs; track club.clubCode) {
+          <option [value]="club.clubCode">{{ club.clubName || club.clubCode }} ({{ club.clubCode }})</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Week
+      <input formControlName="weekNumber" inputmode="numeric" />
+    </label>
+
+    <label>
+      From
+      <input type="date" formControlName="fromDate" />
+    </label>
+
+    <label>
+      To
+      <input type="date" formControlName="toDate" />
+    </label>
+
+    <label>
+      Status
+      <select formControlName="status">
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved / SO</option>
+        <option value="denied">Denied</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="question">Question</option>
+      </select>
+    </label>
+
+    <label>
+      Type
+      <select formControlName="tournamentType">
+        <option value="">All</option>
+        <option value="NQ">NQ</option>
+        <option value="Open">Open</option>
+        <option value="HDP">HDP</option>
+        <option value="Power">Power</option>
+      </select>
+    </label>
+  </form>
+
+  @if (form.controls.duplicateSanctionId.value) {
+    <div class="active-filter">
+      Showing duplicate sanction ID <strong>{{ form.controls.duplicateSanctionId.value }}</strong>
+      <button type="button" (click)="clearDuplicateFilter()">Clear</button>
+    </div>
+  }
+
+  @if (vm.groups.length) {
+    @for (group of vm.groups; track group.key) {
+      <section class="week-section">
+        <header>
+          <h2>{{ group.label }}</h2>
+          @if (group.specialDateLabel) {
+            <span>{{ group.specialDateLabel }}</span>
+          }
+        </header>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Submit</th>
+              <th>Date</th>
+              <th>Priority</th>
+              <th>Sanction</th>
+              <th>Division</th>
+              <th>Level</th>
+              <th>Teams</th>
+              <th>Fee</th>
+              <th>Tournament</th>
+              <th>Location</th>
+              <th>Notes</th>
+              <th>Contact</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (request of group.requests; track request.id) {
+              <tr
+                [class.hdp]="request.hdp"
+                [class.pending]="request.sanctionStatus === 'Pending'"
+                [class.approved]="request.sanctionStatus === 'Approved' || request.sanctionStatus === 'SO'"
+                [class.denied]="request.sanctionStatus === 'Denied'"
+                [class.cancelled]="request.sanctionStatus.toLowerCase() === 'cancelled'"
+                [class.question]="request.sanctionStatus.startsWith('Q')"
+                [class.mismatch]="request.sanctionDivisionMismatch"
+              >
+                <td>
+                  <strong>{{ request.statusCode || request.sanctionStatus }}</strong>
+                  <small>Week {{ request.weekNumber ?? '' }}</small>
+                  @if (request.addedToAes) {
+                    <small>AES added</small>
+                  }
+                </td>
+                <td>
+                  {{ request.submitDate || '' }}
+                  @if (request.hdp) {
+                    <strong class="flag">*</strong>
+                  }
+                </td>
+                <td>
+                  {{ request.date || '' }}
+                  @if (request.startTime) {
+                    <small>{{ request.startTime }}</small>
+                  }
+                </td>
+                <td>{{ request.priority ?? '' }}</td>
+                <td>
+                  {{ request.sanctionId }}
+                  @if (request.sanctionDivisionMismatch) {
+                    <small class="error">Division mismatch</small>
+                  }
+                </td>
+                <td>{{ request.divisionLabel }}</td>
+                <td>{{ request.type }}</td>
+                <td>
+                  {{ request.teamCount ?? '' }}
+                  @if (request.archiveStatus) {
+                    <small>{{ request.archiveStatus }}</small>
+                  }
+                </td>
+                <td>
+                  @if (request.entryFee !== null) {
+                    {{ request.entryFee | currency }}
+                  }
+                </td>
+                <td>
+                  {{ request.name }}
+                  <small>{{ request.clubName || request.clubCode }}</small>
+                </td>
+                <td>{{ request.site }}</td>
+                <td>{{ request.sanctionNotes }}</td>
+                <td>
+                  @if (request.tournamentDirectorEmail) {
+                    <a [href]="mailto(request)">Email</a>
+                    <small>{{ request.tournamentDirectorName }}</small>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+  } @else {
+    <section class="empty-state">
+      <h2>No current sanction requests found.</h2>
+      <p>Adjust the season, club, division, week, or status filters.</p>
+    </section>
+  }
+}

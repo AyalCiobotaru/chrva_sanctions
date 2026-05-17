@@ -18,6 +18,7 @@ import {
   createClub,
   createSanctionRequest,
   exportClubsDirectory,
+  getAdminCurrentSanctionRequests,
   getCurrentSanctionRequests,
   getClubEmailBroadcast,
   getAppConfig,
@@ -172,6 +173,10 @@ export async function handleApiRequest(request, response) {
 
     if (route === 'GET /api/tournaments') {
       return json(response, await searchTournaments(url.searchParams));
+    }
+
+    if (route === 'GET /api/admin/sanction-requests/current') {
+      return json(response, await getAdminCurrentSanctionRequests(url.searchParams));
     }
 
     if (request.method === 'PUT' && url.pathname.startsWith('/api/tournaments/') && url.pathname.endsWith('/added-to-aes')) {

@@ -14,6 +14,8 @@ The current Angular/API app needs these tables:
 - `tournamentNotes`
 - `venues`
 - `tblagegroups`
+- `sanction_specialDates`
+- `sanctionArchive`
 
 The broader ColdFusion inventory is reference material only. Do not copy legacy
 tables into the local database until a modern route, API workflow, or migration
@@ -68,6 +70,8 @@ routes:
 - `tournamentNotes` rows for the seeded sanction requests
 - all `venues`
 - all `tblagegroups`
+- all `sanction_specialDates`
+- `sanctionArchive` rows for the seeded sanction requests
 
 `clubcontacts.password` is written as `NULL` in the seed because the legacy
 passwords are plaintext. For local club-login testing, set a test password

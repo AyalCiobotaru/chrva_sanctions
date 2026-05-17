@@ -8,6 +8,8 @@ import {
   ClubEmailBroadcast,
   ClubEmailBroadcastRequest,
   ClubEmailBroadcastResult,
+  AdminCurrentSanctionRequestsResult,
+  AdminSanctionRequestSearch,
   AuthSession,
   CreateSanctionRequestResult,
   CoordinatorSearch,
@@ -112,6 +114,14 @@ export class ChrvaApiService {
 
   searchTournaments(search: TournamentSearch): Observable<TournamentSummary[]> {
     return this.http.get<TournamentSummary[]>(`${this.baseUrl}/tournaments`, {
+      params: this.toParams(search)
+    });
+  }
+
+  getAdminCurrentSanctionRequests(
+    search: AdminSanctionRequestSearch
+  ): Observable<AdminCurrentSanctionRequestsResult> {
+    return this.http.get<AdminCurrentSanctionRequestsResult>(`${this.baseUrl}/admin/sanction-requests/current`, {
       params: this.toParams(search)
     });
   }
