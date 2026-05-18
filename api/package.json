@@ -7,6 +7,7 @@
     "start": "node --env-file=.env.prod ../server/local-server.mjs",
     "start:test": "node --env-file=.env.test ../server/local-server.mjs",
     "start:prod": "node --env-file=.env.prod ../server/local-server.mjs",
+    "start:api:test:debug": "node --inspect-brk=9229 --env-file=.env.test ../server/local-server.mjs",
     "beekeeper:prod": "node --env-file=.env.prod scripts/create-beekeeper-connection.mjs",
     "inspect:test": "node --env-file=.env.test scripts/inspect-db.mjs",
     "inspect:prod": "node --env-file=.env.prod scripts/inspect-db.mjs",

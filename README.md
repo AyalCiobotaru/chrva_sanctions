@@ -64,6 +64,10 @@ The checked-in `.env.*.example` files document the required variables:
 On Vercel, add those same names as Project Environment Variables. Do not commit
 real SQL Server credentials.
 
+Outdoor Scoring Pool Sheet parsing uses server-side `tesseract.js` OCR. It does
+not require an external image-processing API key. OCR is best-effort, especially
+for handwritten team names, and the extracted setup stays editable before use.
+
 ## Vercel Deployment
 
 Deploy from this `modernized/` directory. `vercel.json` builds the Angular app

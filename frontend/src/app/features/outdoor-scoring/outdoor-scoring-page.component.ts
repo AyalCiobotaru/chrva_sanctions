@@ -2,7 +2,13 @@ import { AsyncPipe } from '@angular/common';
 import { ChangeDetectorRef, Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { OutdoorGameScore, OutdoorMatch, OutdoorPoolState, OutdoorTeamStanding } from './outdoor-scoring.models';
+import {
+  OutdoorGameScore,
+  OutdoorMatch,
+  OutdoorPoolState,
+  OutdoorSheetScanResult,
+  OutdoorTeamStanding
+} from './outdoor-scoring.models';
 import { OutdoorMatchRowComponent } from './outdoor-match-row/outdoor-match-row.component';
 import { OutdoorScoringRealtimeService } from './outdoor-scoring-realtime.service';
 
@@ -17,8 +23,8 @@ interface ScheduleTemplateRow {
 
 const DEFAULT_SCHEDULES: Record<number, ScheduleTemplateRow[]> = {
   4: [
-    { teamASeed: 1, teamBSeed: 3, refSeed: 2 },
     { teamASeed: 2, teamBSeed: 4, refSeed: 1 },
+    { teamASeed: 1, teamBSeed: 3, refSeed: 2 },
     { teamASeed: 1, teamBSeed: 4, refSeed: 3 },
     { teamASeed: 2, teamBSeed: 3, refSeed: 1 },
     { teamASeed: 3, teamBSeed: 4, refSeed: 2 },
@@ -54,6 +60,9 @@ export class OutdoorScoringPageComponent implements OnInit, OnDestroy {
   pool: OutdoorPoolState = this.loadState();
   editingSetup = !this.hadSavedPool || this.pool.matches.length === 0;
   expandedMatchId: string | null = null;
+  scanError = '';
+  scanSummary: { read: string[]; assumed: string[]; manual: string[] } | null = null;
+  scanStatus: 'idle' | 'scanning' | 'success' | 'failed' = 'idle';
   readonly teamCountOptions = TEAM_COUNT_OPTIONS;
   readonly realtimeStatus$ = this.realtime.status$;
 
@@ -101,7 +110,7 @@ export class OutdoorScoringPageComponent implements OnInit, OnDestroy {
     return this.buildStandings();
   }
 
-  captureSheet(event: Event): void {
+  async captureSheet(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
@@ -109,12 +118,63 @@ export class OutdoorScoringPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.pool.imagePreview = typeof reader.result === 'string' ? reader.result : null;
+    this.scanError = '';
+    this.scanSummary = null;
+    this.scanStatus = 'idle';
+    this.scheduleRender();
+
+    try {
+      this.pool.imagePreview = await this.readPoolSheetImage(file);
       this.touch();
-    };
-    reader.readAsDataURL(file);
+      this.scheduleRender();
+    } catch {
+      this.scanStatus = 'failed';
+      this.scanError = 'Unable to load that Pool Sheet photo.';
+      this.scheduleRender();
+    } finally {
+      input.value = '';
+    }
+  }
+
+  async scanPoolSheet(): Promise<void> {
+    if (!this.pool.imagePreview || this.scanStatus === 'scanning') {
+      return;
+    }
+
+    this.scanStatus = 'scanning';
+    this.scanError = '';
+    this.scheduleRender();
+
+    try {
+      const response = await fetch('/api/outdoor-scoring/scan-sheet', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          imageDataUrl: this.pool.imagePreview
+        })
+      });
+      const body = await response.json() as OutdoorSheetScanResult & { error?: string; message?: string };
+
+      if (!response.ok) {
+        throw new Error(body.message || body.error || 'Unable to read the Pool Sheet photo.');
+      }
+
+      this.zone.run(() => {
+        this.applySheetScan(body);
+        this.scanSummary = this.buildScanSummary(body);
+        this.scanStatus = 'success';
+        this.editingSetup = true;
+        this.scheduleRender();
+      });
+    } catch (error) {
+      this.zone.run(() => {
+        this.scanStatus = 'failed';
+        this.scanError = error instanceof Error ? error.message : 'Unable to read the Pool Sheet photo.';
+        this.scheduleRender();
+      });
+    }
   }
 
   changeTeamCount(value: number): void {
@@ -247,7 +307,9 @@ export class OutdoorScoringPageComponent implements OnInit, OnDestroy {
       title: typeof pool.title === 'string' && pool.title.trim() ? pool.title : baseline.title,
       teamCount,
       gamesPerMatch,
-      targetScore: this.defaultTargetScore(teamCount),
+      targetScore: pool.targetScore == null
+        ? this.defaultTargetScore(teamCount)
+        : this.clampWholeNumber(pool.targetScore, 1, 99),
       teams,
       matches: Array.isArray(pool.matches) ? pool.matches.map((match) => ({
         ...match,
@@ -283,6 +345,144 @@ export class OutdoorScoringPageComponent implements OnInit, OnDestroy {
 
   private persistLocal(): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.pool));
+  }
+
+  private applySheetScan(scan: OutdoorSheetScanResult): void {
+    const maxSeed = Math.max(
+      0,
+      ...scan.teams.map((team) => this.wholeNumber(team.seed)),
+      ...scan.matches.flatMap((match) => [
+        this.wholeNumber(match.refSeed),
+        this.wholeNumber(match.teamASeed),
+        this.wholeNumber(match.teamBSeed)
+      ])
+    );
+    const teamCount = this.clampWholeNumber(scan.teamCount ?? (maxSeed || this.pool.teamCount), 3, 7);
+    const scannedTeams = new Map(scan.teams.map((team) => [this.wholeNumber(team.seed), team.name?.trim() || null]));
+    const gamesPerMatch = this.clampWholeNumber(scan.gamesPerMatch ?? this.pool.gamesPerMatch, 1, 5);
+
+    this.pool = {
+      ...this.pool,
+      title: scan.title?.trim() || this.pool.title,
+      teamCount,
+      gamesPerMatch,
+      targetScore: scan.targetScore == null
+        ? this.defaultTargetScore(teamCount)
+        : this.clampWholeNumber(scan.targetScore, 1, 99),
+      teams: Array.from({ length: teamCount }, (_, index) => {
+        const seed = index + 1;
+        return {
+          seed,
+          name: scannedTeams.get(seed) || this.pool.teams.find((team) => team.seed === seed)?.name || `Team ${seed}`
+        };
+      }),
+      matches: scan.matches.length
+        ? scan.matches.map((match) => this.createScannedMatch(match, teamCount, gamesPerMatch))
+        : this.createTemplateMatches(teamCount, gamesPerMatch)
+    };
+    this.expandedMatchId = null;
+    this.touch();
+  }
+
+  private buildScanSummary(scan: OutdoorSheetScanResult): { read: string[]; assumed: string[]; manual: string[] } {
+    const maxSeed = Math.max(
+      0,
+      ...scan.teams.map((team) => this.wholeNumber(team.seed)),
+      ...scan.matches.flatMap((match) => [
+        this.wholeNumber(match.refSeed),
+        this.wholeNumber(match.teamASeed),
+        this.wholeNumber(match.teamBSeed)
+      ])
+    );
+    const teamCount = this.clampWholeNumber(scan.teamCount ?? (maxSeed || this.pool.teamCount), 3, 7);
+    const namedTeams = scan.teams.filter((team) => team.name?.trim()).length;
+    const completeMatches = scan.matches.filter((match) => (
+      this.seedOrNull(match.refSeed, teamCount) != null
+      && this.seedOrNull(match.teamASeed, teamCount) != null
+      && this.seedOrNull(match.teamBSeed, teamCount) != null
+    )).length;
+    const defaultScheduleUsed = scan.matches.length === 0 && this.createTemplateMatches(teamCount).length > 0;
+    const targetScore = scan.targetScore ?? this.defaultTargetScore(teamCount);
+    const gamesPerMatch = scan.gamesPerMatch ?? this.pool.gamesPerMatch;
+
+    const read = [
+      scan.title?.trim() ? `Title: ${scan.title.trim()}` : '',
+      scan.teamCount != null ? `Team count: ${scan.teamCount}` : '',
+      scan.gamesPerMatch != null && scan.targetScore != null ? `Format: ${scan.gamesPerMatch} games to ${scan.targetScore}` : '',
+      namedTeams > 0 ? `Team names: ${namedTeams} of ${teamCount}` : '',
+      completeMatches > 0 ? `Schedule rows: ${completeMatches}` : ''
+    ].filter(Boolean);
+    const assumed = [
+      scan.teamCount == null ? `Team count assumed from OCR context: ${teamCount}` : '',
+      scan.gamesPerMatch == null || scan.targetScore == null ? `Format assumed: ${gamesPerMatch} games to ${targetScore}` : '',
+      defaultScheduleUsed ? `Schedule assumed from the ${teamCount}-team default order` : '',
+      ...scan.notes.filter((note) => !/review handwritten team names/i.test(note))
+    ].filter(Boolean);
+    const manual = [
+      namedTeams < teamCount ? `Fill or verify ${teamCount - namedTeams} team name${teamCount - namedTeams === 1 ? '' : 's'}` : 'Verify handwritten team names',
+      completeMatches < this.pool.matches.length ? 'Review the match order and Work Team values' : '',
+      'Confirm games per match and target score before scoring'
+    ].filter(Boolean);
+
+    return {
+      read,
+      assumed,
+      manual
+    };
+  }
+
+  private createScannedMatch(
+    match: { refSeed: number | null; teamASeed: number | null; teamBSeed: number | null },
+    teamCount: number,
+    gamesPerMatch: number
+  ): OutdoorMatch {
+    return {
+      id: this.createId(),
+      refSeed: this.seedOrNull(match.refSeed, teamCount),
+      teamASeed: this.seedOrNull(match.teamASeed, teamCount),
+      teamBSeed: this.seedOrNull(match.teamBSeed, teamCount),
+      games: this.createGames(gamesPerMatch),
+      final: false
+    };
+  }
+
+  private seedOrNull(seed: number | null, teamCount: number): number | null {
+    const value = this.wholeNumber(seed);
+    return value >= 1 && value <= teamCount ? value : null;
+  }
+
+  private readPoolSheetImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const maxSide = 1800;
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * scale));
+        const height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d')?.drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.86));
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        this.readFileAsDataUrl(file).then(resolve).catch(reject);
+      };
+      image.src = objectUrl;
+    });
+  }
+
+  private readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Invalid file result.'));
+      reader.onerror = () => reject(reader.error ?? new Error('Unable to read file.'));
+      reader.readAsDataURL(file);
+    });
   }
 
   private scheduleRender(): void {
