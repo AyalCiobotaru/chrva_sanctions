@@ -24,9 +24,16 @@ export interface OutdoorPoolState {
   targetScore: number;
   teams: OutdoorTeam[];
   matches: OutdoorMatch[];
-  activeMatchId: string | null;
   imagePreview: string | null;
   updatedAt: string | null;
+}
+
+export interface OutdoorTeamStanding {
+  seed: number;
+  name: string;
+  wins: number;
+  losses: number;
+  pointDifferential: number;
 }
 
 export interface OutdoorRealtimeSnapshot {

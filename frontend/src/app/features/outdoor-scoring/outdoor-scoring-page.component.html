@@ -48,9 +48,12 @@
         <div class="inline-fields">
           <label>
             Teams
-            <input type="number" min="2" max="16" [(ngModel)]="pool.teamCount" />
+            <select [ngModel]="pool.teamCount" (ngModelChange)="changeTeamCount($event)">
+              @for (count of teamCountOptions; track count) {
+                <option [ngValue]="count">{{ count }}</option>
+              }
+            </select>
           </label>
-          <button type="button" class="secondary" (click)="applyTeamCount()">Apply</button>
         </div>
         <div class="inline-fields">
           <label>
@@ -87,7 +90,7 @@
               <div class="schedule-row">
                 <strong>{{ index + 1 }}</strong>
                 <label>
-                  Ref
+                  Work Team
                   <select [(ngModel)]="match.refSeed" (ngModelChange)="save()">
                     <option [ngValue]="null">None</option>
                     @for (team of pool.teams; track team.seed) {
@@ -132,66 +135,42 @@
         <button type="button" class="danger" (click)="resetPool()">Reset pool</button>
       </header>
 
-      @if (activeMatch; as match) {
-        <section class="active-match" [ngClass]="{ final: match.final }">
-          <div class="match-heading">
-            <div>
-              <span class="status">{{ match.final ? 'Final' : pool.activeMatchId === match.id ? 'Live' : 'Ready' }}</span>
-              <h3>{{ teamName(match.teamASeed) }} vs {{ teamName(match.teamBSeed) }}</h3>
-              @if (match.refSeed) {
-                <p>Work team: {{ teamName(match.refSeed) }}</p>
-              }
-            </div>
-            @if (match.final) {
-              <button type="button" class="secondary" (click)="reopen(match)">Reopen</button>
-            } @else {
-              <button type="button" (click)="markFinal(match)">Mark final</button>
-            }
+      <section class="standings">
+        <div class="standings-header">
+          <span>Rank</span>
+          <span>Team</span>
+          <span>Wins</span>
+          <span>Losses</span>
+          <span>Diff</span>
+        </div>
+        @for (standing of standings; track standing.seed; let index = $index) {
+          <div class="standing-row">
+            <strong>{{ index + 1 }}</strong>
+            <span>{{ standing.name }}</span>
+            <span>{{ standing.wins }}</span>
+            <span>{{ standing.losses }}</span>
+            <span>{{ standing.pointDifferential }}</span>
           </div>
+        }
+      </section>
 
-          <div class="game-grid">
-            @for (game of match.games; track $index; let gameIndex = $index) {
-              <div class="game-panel">
-                <h4>Game {{ gameIndex + 1 }} to {{ pool.targetScore }}</h4>
-                <div class="score-columns">
-                  <div>
-                    <span>{{ teamName(match.teamASeed) }}</span>
-                    <input type="number" min="0" [(ngModel)]="game.scoreA" (ngModelChange)="normalizeScore(game, 'A')" [disabled]="match.final" />
-                    <div class="score-buttons">
-                      <button type="button" (click)="updateScore(match, game, 'A', -1)" [disabled]="match.final">-1</button>
-                      <button type="button" (click)="updateScore(match, game, 'A', 1)" [disabled]="match.final">+1</button>
-                    </div>
-                  </div>
-                  <div>
-                    <span>{{ teamName(match.teamBSeed) }}</span>
-                    <input type="number" min="0" [(ngModel)]="game.scoreB" (ngModelChange)="normalizeScore(game, 'B')" [disabled]="match.final" />
-                    <div class="score-buttons">
-                      <button type="button" (click)="updateScore(match, game, 'B', -1)" [disabled]="match.final">-1</button>
-                      <button type="button" (click)="updateScore(match, game, 'B', 1)" [disabled]="match.final">+1</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        </section>
-      }
-
-      <section class="match-list">
-        <h3>Match Order</h3>
-        @for (match of pool.matches; track match.id; let index = $index) {
-          <button
-            type="button"
-            [class.active]="pool.activeMatchId === match.id"
-            [class.final]="match.final"
-            (click)="startScoring(match)"
-          >
-            <span>{{ index + 1 }}</span>
-            <strong>{{ teamName(match.teamASeed) }} vs {{ teamName(match.teamBSeed) }}</strong>
-            @if (match.refSeed) {
-              <small>Work: {{ teamName(match.refSeed) }}</small>
-            }
-          </button>
+      <section class="match-grid">
+        @for (match of pool.matches; track match.id; let index = $index; let first = $first; let last = $last) {
+          <app-outdoor-match-row
+            [match]="match"
+            [teams]="pool.teams"
+            [index]="index"
+            [targetScore]="pool.targetScore"
+            [expanded]="expandedMatchId === match.id"
+            [first]="first"
+            [last]="last"
+            (expandedChange)="setExpanded(match.id, $event)"
+            (scoreChanged)="handleScoreChanged()"
+            (finalChanged)="handleFinalChanged()"
+            (movedUp)="moveMatch(match.id, -1)"
+            (movedDown)="moveMatch(match.id, 1)"
+            (removed)="removeMatch(match.id)"
+          ></app-outdoor-match-row>
         }
       </section>
     </section>
