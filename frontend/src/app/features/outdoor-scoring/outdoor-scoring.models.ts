@@ -36,6 +36,27 @@ export interface OutdoorTeamStanding {
   pointDifferential: number;
 }
 
+export interface OutdoorSheetScanTeam {
+  seed: number;
+  name: string | null;
+}
+
+export interface OutdoorSheetScanMatch {
+  refSeed: number | null;
+  teamASeed: number | null;
+  teamBSeed: number | null;
+}
+
+export interface OutdoorSheetScanResult {
+  title: string | null;
+  teamCount: number | null;
+  gamesPerMatch: number | null;
+  targetScore: number | null;
+  teams: OutdoorSheetScanTeam[];
+  matches: OutdoorSheetScanMatch[];
+  notes: string[];
+}
+
 export interface OutdoorRealtimeSnapshot {
   clientId: string;
   kind: 'pool-updated' | 'score-updated';
