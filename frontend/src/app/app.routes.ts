@@ -39,14 +39,6 @@ export const routes: Routes = [
   { path: 'coordinators', component: CoordinatorsPageComponent, canActivate: [authGuard], title: 'Regional Junior Contacts' },
   { path: 'tournaments', component: TournamentsPageComponent, canActivate: [authGuard], title: 'AES Tournaments' },
   {
-    path: 'outdoor-scoring',
-    loadComponent: () => import('./features/outdoor-scoring/outdoor-scoring-page.component')
-      .then((module) => module.OutdoorScoringPageComponent),
-    canActivate: [authGuard],
-    data: { requiredRole: 'master' },
-    title: 'Outdoor Scoring'
-  },
-  {
     path: 'migration',
     component: MigrationPageComponent,
     canActivate: [authGuard],
