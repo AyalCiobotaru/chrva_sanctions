@@ -11,6 +11,8 @@ delete from dbo.[coordcontacts];
 delete from dbo.[tournamentNotes];
 delete from dbo.[venues];
 delete from dbo.[tblagegroups];
+delete from dbo.[sanction_specialDates];
+delete from dbo.[sanctionArchive];
 
 print 'inserting 50 rows into dbo.coordcontacts';
 insert into dbo.[coordcontacts] ([category], [level], [grouping], [coordlname], [coordfname], [straddress1], [straddress2], [city], [st], [zip], [phone1], [phone2], [ext], [fax], [email], [display_record], [type]) values (N'Boys 12 Coordinator', N'Boys 12', N'Coordinator', N'Van Lowe', N'Peggy and Scott', N'9708 Inaugural Way', null, N'Montgomery Village', N'MD', N'20886', N'301-977-9125', null, null, null, N'scott.vanlowe@chrvavb.org', null, N'Juniors');
@@ -2827,6 +2829,40 @@ insert into dbo.[tblagegroups] ([id], [agegroup], [agedivision], [grouping], [ye
 insert into dbo.[tblagegroups] ([id], [agegroup], [agedivision], [grouping], [year]) values (47, N'Boys 15-18', 1518, null, null);
 set identity_insert dbo.[tblagegroups] off;
 
+print 'inserting 24 rows into dbo.sanction_specialDates';
+set identity_insert dbo.[sanction_specialDates] on;
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (1, 3, N'MLK weekend', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (2, 7, N'Prez Weekend - CHC', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (3, 14, N'Non-Bid Regionals', N'2018 - April 7 & 8 - NEQ for 12''s thru 15''s 
+ CHRVA Regionals 14-15-17 Club in 2018');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (4, 16, N'Non-Bid Regionals - NEQ 13LA, 14LA, 15OU, 16OUL, 17ULA', N'Club Regional Championships');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (5, 17, N'ChesShowdown - BF 13, 14, 15, 17/18O', N'2018 - April 28 & 29 Club Regionals');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (6, 13, N'MAPL York; NEQ 16A 14all 12NUA 11N', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (7, 5, N'CHRVA NHS - Pittsburgh - Charm City', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (9, 10, N'Irish Rumble / VA Beach', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (10, 8, N'', N'12s - only sanctioned two, next year lets try for 3 tournament 24 spots total');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (11, 1, N'', N'Only run one per age group on this weekend.');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (12, 2, N'', N'2015: oversubscribed by about 20 teams at 15/16s.  Could add another tournament in 2016');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (13, 4, N'MAPL HR', N'NOVA keeps HDP for 2021 into 2022');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (14, 6, N'', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (17, 9, N'2/28 Boys regionals - 3/1 18''s Regionals', N'2018 - March 3 & 4 - 18''s Regional ChampionshipsHDP
+Week 9 HDP for 15 belonged to ARYTO - Areyto Volleyball Club - didn''t not reclaim for 2022');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (19, 11, N'Shamrock / Grand Prix / CHRVA@STJ / NEQ 17-18', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (20, 12, N'Bid Regionals 21st; NEQ 17ULA 16OUL 15O', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (23, 15, N'NEQ 11/12/13/14/15/16', N'2018-cannot support this weekend NEQ/Easter
+2018* April 14 & 15 _ Open Regional Championships
+2020 - cannot support this weekend NEQ/Easter');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (26, 18, N'', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (27, 19, N'May Madness / Beachfest 12, 16, 17/18C', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (28, 20, N'', N'');
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (29, 22, null, null);
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (30, 21, null, null);
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (31, 23, null, null);
+insert into dbo.[sanction_specialDates] ([id], [week], [label], [notes]) values (32, 24, null, null);
+set identity_insert dbo.[sanction_specialDates] off;
+
+print 'no rows for dbo.sanctionArchive';
+
 commit transaction;
 go
 
@@ -2843,5 +2879,9 @@ select 'tournamentNotes', count(*) from dbo.tournamentNotes
 union all
 select 'venues', count(*) from dbo.venues
 union all
-select 'tblagegroups', count(*) from dbo.tblagegroups;
+select 'tblagegroups', count(*) from dbo.tblagegroups
+union all
+select 'sanction_specialDates', count(*) from dbo.sanction_specialDates
+union all
+select 'sanctionArchive', count(*) from dbo.sanctionArchive;
 go

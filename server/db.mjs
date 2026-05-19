@@ -932,6 +932,172 @@ export async function searchCoordinators(filters) {
   }));
 }
 
+export async function getAdminCurrentSanctionRequests(filters) {
+  const pool = await getPool();
+  const config = getAppConfig();
+  const selectedSeason = Number.parseInt(filters.get('season') || config.currentSeason, 10);
+  const season = Number.isInteger(selectedSeason) ? selectedSeason : Number(config.currentSeason);
+  const configuredSeasons = [config.previousSeason, config.currentSeason, config.nextSeason]
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value));
+  const options = await getAdminSanctionRequestOptions(pool, season, configuredSeasons);
+  const request = pool.request();
+  const where = addAdminSanctionRequestFilters(whereBase(), request, filters, season, { includeStatus: true });
+
+  const result = await request.query(`
+    with requests as (
+      select
+        sr.*,
+        (case when datepart(w, sr.dte) = 1 then datepart(ww, sr.dte) - 1 else datepart(ww, sr.dte) end) as weekNumber,
+        (case
+          when datepart(weekday, sr.dte) > 5 then dateadd(week, -3, dateadd(day, 4, dateadd(week, datediff(week, 0, sr.dte), 0)))
+          else dateadd(week, -3, dateadd(day, -3, dateadd(week, datediff(week, 0, sr.dte), 0)))
+        end) as computedCloseDate
+      from sanction_requested sr
+      where ${where.join(' and ')}
+    ),
+    archive as (
+      select uniqueid, max(status) as archiveStatus
+      from sanctionArchive
+      group by uniqueid
+    )
+    select
+      r.id,
+      r.sanctionid,
+      r.sanctionStatus,
+      r.sanctionNotes,
+      r.submitDate,
+      r.dte,
+      r.startTime,
+      r.priority,
+      r.division,
+      r.type,
+      r.number_of_teams,
+      r.entry_fee,
+      r.tournname,
+      r.site,
+      r.clubcode,
+      r.HDP,
+      r.SAGO,
+      r.AES_added,
+      r.TournamentDirector_Email,
+      r.TournamentDirector_Name,
+      r.weekNumber,
+      r.computedCloseDate,
+      cc.ClubName,
+      sd.id as specialDateId,
+      sd.label as specialDateLabel,
+      sd.notes as specialDateNotes,
+      archive.archiveStatus
+    from requests r
+    left join clubcontacts cc on r.clubcode = cc.ClubCode
+    left join sanction_specialDates sd on r.weekNumber = sd.week
+    left join archive on r.sanctionid = archive.uniqueid
+    order by r.weekNumber, r.division, r.priority, r.submitDate
+  `);
+
+  const counts = await getAdminSanctionRequestCounts(pool, filters, season);
+  const duplicateSanctionIds = await getDuplicateAdminSanctionIds(pool, filters, season);
+
+  return {
+    season: String(season),
+    options,
+    counts,
+    duplicateSanctionIds,
+    requests: result.recordset.map(mapAdminSanctionRequest)
+  };
+}
+
+export async function updateAdminSanctionRequestReview(requestId, body) {
+  const id = Number(requestId);
+  const allowedStatuses = new Set([
+    'Approved',
+    'Denied',
+    'Pending',
+    'SO',
+    'Posted',
+    'Question',
+    'Regionals',
+    'Cancelled',
+    'Suspended'
+  ]);
+  const sanctionStatus = text(body?.sanctionStatus);
+  const priority = Number.parseInt(body?.priority, 10);
+  let sanctionId = text(body?.sanctionId);
+  const sanctionNotes = text(body?.sanctionNotes);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    const error = new Error('Sanction request id is invalid.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  if (!allowedStatuses.has(sanctionStatus)) {
+    const error = new Error('Sanction status is invalid.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  if (!Number.isInteger(priority) || priority < 0 || priority > 9) {
+    const error = new Error('Priority must be a number from 0 to 9.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const pool = await getPool();
+  const existing = await getAdminSanctionRequestById(pool, id);
+
+  if (!existing) {
+    const error = new Error('Sanction request was not found.');
+    error.statusCode = 404;
+    error.code = 'ERR_SANCTION_REQUEST_NOT_FOUND';
+    throw error;
+  }
+
+  if (sanctionStatus === 'Approved' && (!sanctionId || sanctionId === 'New')) {
+    sanctionId = await getNextSanctionId(pool, existing.division, existing.date);
+  }
+
+  if (sanctionStatus === 'Denied' && (!sanctionId || sanctionId === 'New')) {
+    sanctionId = 'Denied';
+  }
+
+  if (!sanctionId) {
+    const error = new Error('Sanction ID is required.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  if (sanctionId.length > 15) {
+    const error = new Error('Sanction ID must be 15 characters or fewer.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  await pool.request()
+    .input('id', sql.Int, id)
+    .input('sanctionId', sql.NVarChar, sanctionId)
+    .input('priority', sql.TinyInt, priority)
+    .input('sanctionNotes', sql.NVarChar, sanctionNotes)
+    .input('sanctionStatus', sql.VarChar, sanctionStatus)
+    .query(`
+      update sanction_requested
+      set sanctionid = @sanctionId,
+        priority = @priority,
+        sanctionNotes = @sanctionNotes,
+        sanctionStatus = @sanctionStatus,
+        updated = getdate()
+      where id = @id
+    `);
+
+  return getAdminSanctionRequestById(pool, id);
+}
+
 export async function searchTournaments(filters) {
   const pool = await getPool();
   const config = getAppConfig();
@@ -1166,6 +1332,381 @@ async function queryOptional(pool, query) {
 
     throw error;
   }
+}
+
+async function getAdminSanctionRequestOptions(pool, season, configuredSeasons) {
+  const seasons = await pool.request().query(`
+    select distinct datepart(year, dte) as season
+    from sanction_requested
+    where dte is not null
+    order by datepart(year, dte) desc
+  `);
+  const ageGroups = await pool.request().query(`
+    select distinct agegroup
+    from tblagegroups
+    where grouping in ('Juniors', 'Boys')
+      and agegroup is not null
+    order by agegroup
+  `);
+  const clubs = await pool.request()
+    .input('seasonStart', sql.Date, `${season - 1}-10-01`)
+    .input('seasonEnd', sql.Date, `${season}-12-31`)
+    .query(`
+      select distinct
+        sr.clubcode,
+        cc.ClubName
+      from sanction_requested sr
+      left join clubcontacts cc on sr.clubcode = cc.ClubCode
+      where sr.clubcode is not null
+        and sr.dte > @seasonStart
+        and sr.dte < @seasonEnd
+      order by cc.ClubName, sr.clubcode
+    `);
+
+  const seasonOptions = new Set([
+    ...configuredSeasons.map((option) => String(option)),
+    ...seasons.recordset.map((row) => String(row.season)).filter(Boolean)
+  ]);
+
+  return {
+    seasons: [...seasonOptions].sort((a, b) => Number(b) - Number(a)),
+    ageGroups: ageGroups.recordset.map((row) => text(row.agegroup)).filter(Boolean),
+    clubs: clubs.recordset.map((row) => ({
+      clubCode: text(row.clubcode),
+      clubName: text(row.ClubName)
+    })).filter((club) => club.clubCode)
+  };
+}
+
+async function getAdminSanctionRequestCounts(pool, filters, season) {
+  const request = pool.request();
+  const where = addAdminSanctionRequestFilters(whereBase(), request, filters, season, { includeStatus: false });
+  const result = await request.query(`
+    select
+      count(*) as total,
+      sum(case when sanctionStatus = 'Pending' then 1 else 0 end) as pending,
+      sum(case when sanctionStatus in ('Approved', 'SO') then 1 else 0 end) as approved,
+      sum(case when sanctionStatus = 'Denied' then 1 else 0 end) as denied,
+      sum(case when lower(sanctionStatus) = 'cancelled' then 1 else 0 end) as cancelled,
+      sum(case when HDP = 'Y' then 1 else 0 end) as hdp,
+      sum(case when SAGO = 'Y' then 1 else 0 end) as sago
+    from sanction_requested sr
+    where ${where.join(' and ')}
+  `);
+  const row = result.recordset[0] ?? {};
+
+  return {
+    total: row.total ?? 0,
+    pending: row.pending ?? 0,
+    approved: row.approved ?? 0,
+    denied: row.denied ?? 0,
+    cancelled: row.cancelled ?? 0,
+    hdp: row.hdp ?? 0,
+    sago: row.sago ?? 0
+  };
+}
+
+async function getDuplicateAdminSanctionIds(pool, filters, season) {
+  const request = pool.request();
+  const where = addAdminSanctionRequestFilters(whereBase(), request, filters, season, {
+    includeStatus: false,
+    includeHdp: false,
+    includeSago: false
+  });
+  where.push("sr.sanctionStatus in ('Approved', 'Posted')");
+  where.push("sr.sanctionid not in ('New', 'Denied')");
+  where.push("sr.sanctionid is not null");
+
+  const result = await request.query(`
+    select sr.sanctionid, count(*) as duplicateCount
+    from sanction_requested sr
+    where ${where.join(' and ')}
+    group by sr.sanctionid
+    having count(*) > 1
+    order by sr.sanctionid
+  `);
+
+  return result.recordset.map((row) => ({
+    sanctionId: text(row.sanctionid),
+    count: row.duplicateCount ?? 0
+  }));
+}
+
+async function getAdminSanctionRequestById(pool, id) {
+  const result = await pool.request()
+    .input('id', sql.Int, id)
+    .query(`
+      with request as (
+        select
+          sr.*,
+          (case when datepart(w, sr.dte) = 1 then datepart(ww, sr.dte) - 1 else datepart(ww, sr.dte) end) as weekNumber,
+          (case
+            when datepart(weekday, sr.dte) > 5 then dateadd(week, -3, dateadd(day, 4, dateadd(week, datediff(week, 0, sr.dte), 0)))
+            else dateadd(week, -3, dateadd(day, -3, dateadd(week, datediff(week, 0, sr.dte), 0)))
+          end) as computedCloseDate
+        from sanction_requested sr
+        where sr.id = @id
+      ),
+      archive as (
+        select uniqueid, max(status) as archiveStatus
+        from sanctionArchive
+        group by uniqueid
+      )
+      select
+        r.id,
+        r.sanctionid,
+        r.sanctionStatus,
+        r.sanctionNotes,
+        r.submitDate,
+        r.dte,
+        r.startTime,
+        r.priority,
+        r.division,
+        r.type,
+        r.number_of_teams,
+        r.entry_fee,
+        r.tournname,
+        r.site,
+        r.clubcode,
+        r.HDP,
+        r.SAGO,
+        r.AES_added,
+        r.TournamentDirector_Email,
+        r.TournamentDirector_Name,
+        r.weekNumber,
+        r.computedCloseDate,
+        cc.ClubName,
+        sd.id as specialDateId,
+        sd.label as specialDateLabel,
+        sd.notes as specialDateNotes,
+        archive.archiveStatus
+      from request r
+      left join clubcontacts cc on r.clubcode = cc.ClubCode
+      left join sanction_specialDates sd on r.weekNumber = sd.week
+      left join archive on r.sanctionid = archive.uniqueid
+    `);
+
+  return result.recordset[0] ? mapAdminSanctionRequest(result.recordset[0]) : null;
+}
+
+async function getNextSanctionId(pool, division, dateValue) {
+  const code = getSanctionDivisionCode(division);
+  const year = dateValue ? new Date(dateValue).getFullYear() : Number(getAppConfig().currentSeason);
+  const yy = String(year).slice(-2);
+
+  if (!code) {
+    const error = new Error('A sanction ID is required for this division.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const prefix = `${code}-%`;
+  const result = await pool.request()
+    .input('prefix', sql.NVarChar, `${prefix}%`)
+    .input('yy', sql.NVarChar, `_${yy}`)
+    .query(`
+      select max(try_convert(int, substring(
+        sanctionid,
+        charindex('-', sanctionid) + 1,
+        charindex('_', sanctionid) - charindex('-', sanctionid) - 1
+      ))) as maxNumber
+      from sanction_requested
+      where sanctionid like @prefix
+        and right(sanctionid, 3) = @yy
+        and sanctionStatus not in ('SO', 'Denied')
+        and charindex('-', sanctionid) > 0
+        and charindex('_', sanctionid) > charindex('-', sanctionid)
+    `);
+  const next = (result.recordset[0]?.maxNumber ?? 0) + 1;
+  const padded = next < 10 ? `0${next}` : String(next);
+
+  return `${code}-${padded}_${yy}`;
+}
+
+function getSanctionDivisionCode(division) {
+  const normalized = text(division).toLowerCase();
+  const suffix = normalized.startsWith('boys') ? 'B' : '';
+  const numbers = normalized.match(/\d+/g) ?? [];
+
+  if (numbers.length === 0) {
+    return '';
+  }
+
+  const ordered = numbers
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value))
+    .sort((a, b) => a - b)
+    .join('');
+
+  return ordered ? `CH${ordered}${suffix}` : '';
+}
+
+function addAdminSanctionRequestFilters(where, request, filters, season, options = {}) {
+  const includeStatus = options.includeStatus !== false;
+  const includeHdp = options.includeHdp !== false;
+  const includeSago = options.includeSago !== false;
+  const divisions = text(filters.get('divisions')).split(',').map(text).filter(Boolean);
+  const weekNumber = Number.parseInt(filters.get('weekNumber'), 10);
+
+  request.input('seasonStart', sql.Date, `${season - 1}-10-01`);
+  request.input('seasonEnd', sql.Date, `${season}-12-31`);
+
+  if (divisions.length > 0) {
+    const placeholders = divisions.map((division, index) => {
+      const name = `division${index}`;
+      request.input(name, sql.NVarChar, division);
+      return `@${name}`;
+    });
+    where.push(`sr.division in (${placeholders.join(', ')})`);
+  }
+
+  addExact(where, request, 'clubCode', 'sr.clubcode', filters.get('clubCode'));
+  addExact(where, request, 'tournamentType', 'sr.type', filters.get('tournamentType'));
+  addExact(where, request, 'duplicateSanctionId', 'sr.sanctionid', filters.get('duplicateSanctionId'));
+
+  if (Number.isInteger(weekNumber) && weekNumber > 0) {
+    request.input('weekNumber', sql.Int, weekNumber);
+    where.push('(case when datepart(w, sr.dte) = 1 then datepart(ww, sr.dte) - 1 else datepart(ww, sr.dte) end) = @weekNumber');
+  }
+
+  addDateRange(where, request, 'fromDate', 'toDate', 'sr.dte', filters.get('fromDate'), filters.get('toDate'));
+
+  if (includeStatus) {
+    switch (text(filters.get('status')).toLowerCase()) {
+      case 'pending':
+        where.push("sr.sanctionStatus = 'Pending'");
+        break;
+      case 'approved':
+        where.push("sr.sanctionStatus in ('Approved', 'SO')");
+        break;
+      case 'denied':
+        where.push("sr.sanctionStatus = 'Denied'");
+        break;
+      case 'cancelled':
+        where.push("lower(sr.sanctionStatus) = 'cancelled'");
+        break;
+      case 'question':
+        where.push("sr.sanctionStatus like 'Q%'");
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (includeHdp && filters.get('hdpOnly') === 'true') {
+    where.push("sr.HDP = 'Y'");
+  }
+
+  if (includeSago && filters.get('sagoOnly') === 'true') {
+    where.push("sr.SAGO = 'Y'");
+  }
+
+  return where;
+}
+
+function whereBase() {
+  return [
+    'sr.dte > @seasonStart',
+    'sr.dte < @seasonEnd'
+  ];
+}
+
+function addDateRange(where, request, fromName, toName, column, fromValue, toValue) {
+  const fromDate = text(fromValue);
+  const toDate = text(toValue);
+
+  if (fromDate) {
+    request.input(fromName, sql.Date, fromDate);
+    where.push(`cast(${column} as date) >= @${fromName}`);
+  }
+
+  if (toDate) {
+    request.input(toName, sql.Date, toDate);
+    where.push(`cast(${column} as date) <= @${toName}`);
+  }
+}
+
+function mapAdminSanctionRequest(row) {
+  const division = text(row.division);
+  const sanctionId = text(row.sanctionid);
+
+  return {
+    id: String(row.id),
+    sanctionId,
+    suggestedSanctionId: '',
+    sanctionStatus: text(row.sanctionStatus),
+    statusCode: text(row.sanctionStatus).slice(0, 2),
+    archiveStatus: text(row.archiveStatus).slice(0, 1),
+    sanctionNotes: text(row.sanctionNotes),
+    submitDate: toDate(row.submitDate),
+    date: toDate(row.dte),
+    startTime: toTime(row.startTime),
+    closeDate: toDate(row.computedCloseDate),
+    priority: row.priority == null ? null : String(row.priority),
+    division,
+    divisionLabel: division.replace(/^Girls\s+/i, ''),
+    type: text(row.type),
+    teamCount: row.number_of_teams ?? null,
+    entryFee: toNumber(row.entry_fee),
+    name: text(row.tournname),
+    site: text(row.site),
+    clubCode: text(row.clubcode),
+    clubName: text(row.ClubName),
+    hdp: text(row.HDP) === 'Y',
+    sago: text(row.SAGO) === 'Y',
+    addedToAes: row.AES_added != null,
+    tournamentDirectorEmail: text(row.TournamentDirector_Email),
+    tournamentDirectorName: text(row.TournamentDirector_Name),
+    weekNumber: row.weekNumber ?? null,
+    specialDate: {
+      id: row.specialDateId == null ? null : String(row.specialDateId),
+      label: text(row.specialDateLabel),
+      notes: text(row.specialDateNotes)
+    },
+    sanctionDivisionMismatch: hasSanctionDivisionMismatch(sanctionId, division)
+  };
+}
+
+function hasSanctionDivisionMismatch(sanctionId, division) {
+  if (!sanctionId || sanctionId === 'New' || sanctionId === 'Denied') {
+    return false;
+  }
+
+  if (sanctionId.startsWith('CHReg') || sanctionId.startsWith('CHB') || division.startsWith('Boys')) {
+    return false;
+  }
+
+  const hyphenIndex = sanctionId.indexOf('-');
+
+  if (hyphenIndex < 0) {
+    return false;
+  }
+
+  const sanctionDivision = sanctionId.slice(2, hyphenIndex);
+  const expectedDivision = girlsDivisionCode(division);
+  return expectedDivision !== '0' && sanctionDivision !== expectedDivision;
+}
+
+function girlsDivisionCode(division) {
+  const normalized = text(division);
+  const lookup = {
+    'Girls 10': '10',
+    'Girls 11': '11',
+    'Girls 12': '12',
+    'Girls 13': '13',
+    'Girls 14': '14',
+    'Girls 15': '15',
+    'Girls 16': '16',
+    'Girls 17': '17',
+    'Girls 18': '18',
+    'Girls 12/11': '1112',
+    'Girls 14/13': '1314',
+    'Girls 16/15': '1516',
+    'Girls 18/17': '1718'
+  };
+
+  return lookup[normalized] ?? '0';
 }
 
 function mapSanctionClub(row) {

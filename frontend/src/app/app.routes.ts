@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { AdminCurrentSanctionRequestsPageComponent } from './features/admin-sanction-requests/current/admin-current-sanction-requests-page.component';
 import { sanctionClubGuard } from './core/sanction-club.guard';
 import { ClubsPageComponent } from './features/clubs/clubs-page.component';
 import { CoordinatorsPageComponent } from './features/coordinators/coordinators-page.component';
@@ -38,6 +39,12 @@ export const routes: Routes = [
   { path: 'clubs', component: ClubsPageComponent, canActivate: [authGuard], title: 'Club Contacts' },
   { path: 'coordinators', component: CoordinatorsPageComponent, canActivate: [authGuard], title: 'Regional Junior Contacts' },
   { path: 'tournaments', component: TournamentsPageComponent, canActivate: [authGuard], title: 'AES Tournaments' },
+  {
+    path: 'admin/sanction-requests/current',
+    component: AdminCurrentSanctionRequestsPageComponent,
+    canActivate: [authGuard],
+    title: 'Admin Current Sanction Requests'
+  },
   {
     path: 'migration',
     component: MigrationPageComponent,

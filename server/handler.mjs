@@ -18,6 +18,7 @@ import {
   createClub,
   createSanctionRequest,
   exportClubsDirectory,
+  getAdminCurrentSanctionRequests,
   getCurrentSanctionRequests,
   getClubEmailBroadcast,
   getAppConfig,
@@ -28,6 +29,7 @@ import {
   sendClubEmailBroadcast,
   searchTournaments,
   updateClub,
+  updateAdminSanctionRequestReview,
   updateTournamentAddedToAes,
   updateTournamentOkToPay
 } from './db.mjs';
@@ -173,6 +175,15 @@ export async function handleApiRequest(request, response) {
 
     if (route === 'GET /api/tournaments') {
       return json(response, await searchTournaments(url.searchParams));
+    }
+
+    if (route === 'GET /api/admin/sanction-requests/current') {
+      return json(response, await getAdminCurrentSanctionRequests(url.searchParams));
+    }
+
+    if (request.method === 'PUT' && url.pathname.startsWith('/api/admin/sanction-requests/') && url.pathname.endsWith('/review')) {
+      const requestId = decodeURIComponent(url.pathname.slice('/api/admin/sanction-requests/'.length, -'/review'.length));
+      return json(response, await updateAdminSanctionRequestReview(requestId, await readJson(request)));
     }
 
     if (request.method === 'PUT' && url.pathname.startsWith('/api/tournaments/') && url.pathname.endsWith('/added-to-aes')) {

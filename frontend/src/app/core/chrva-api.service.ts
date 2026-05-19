@@ -8,6 +8,10 @@ import {
   ClubEmailBroadcast,
   ClubEmailBroadcastRequest,
   ClubEmailBroadcastResult,
+  AdminCurrentSanctionRequestsResult,
+  AdminSanctionRequestReviewRequest,
+  AdminSanctionRequestSearch,
+  AdminSanctionRequestSummary,
   AuthSession,
   CreateSanctionRequestResult,
   CoordinatorSearch,
@@ -114,6 +118,24 @@ export class ChrvaApiService {
     return this.http.get<TournamentSummary[]>(`${this.baseUrl}/tournaments`, {
       params: this.toParams(search)
     });
+  }
+
+  getAdminCurrentSanctionRequests(
+    search: AdminSanctionRequestSearch
+  ): Observable<AdminCurrentSanctionRequestsResult> {
+    return this.http.get<AdminCurrentSanctionRequestsResult>(`${this.baseUrl}/admin/sanction-requests/current`, {
+      params: this.toParams(search)
+    });
+  }
+
+  updateAdminSanctionRequestReview(
+    requestId: string,
+    request: AdminSanctionRequestReviewRequest
+  ): Observable<AdminSanctionRequestSummary> {
+    return this.http.put<AdminSanctionRequestSummary>(
+      `${this.baseUrl}/admin/sanction-requests/${encodeURIComponent(requestId)}/review`,
+      request
+    );
   }
 
   updateTournamentAddedToAes(

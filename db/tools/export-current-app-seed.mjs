@@ -32,6 +32,8 @@ try {
   const tournamentNotes = await queryTournamentNotes(sanctionIds);
   const venues = await queryAll('venues');
   const ageGroups = await queryAll('tblagegroups');
+  const specialDates = await queryAll('sanction_specialDates');
+  const sanctionArchive = await querySanctionArchive(sanctionIds);
   const rowVersionColumns = await queryRowVersionColumns([
     'clubcontacts',
     'coordcontacts',
@@ -39,6 +41,8 @@ try {
     'tournamentNotes',
     'venues',
     'tblagegroups',
+    'sanction_specialDates',
+    'sanctionArchive',
   ]);
 
   const script = [
@@ -55,6 +59,8 @@ try {
     deleteStatement('tournamentNotes'),
     deleteStatement('venues'),
     deleteStatement('tblagegroups'),
+    deleteStatement('sanction_specialDates'),
+    deleteStatement('sanctionArchive'),
     '',
     ...insertRows('coordcontacts', coordinators, rowVersionColumns),
     '',
@@ -69,6 +75,10 @@ try {
     ...insertRows('venues', venues, rowVersionColumns, {}, { identityInsert: true }),
     '',
     ...insertRows('tblagegroups', ageGroups, rowVersionColumns, {}, { identityInsert: true }),
+    '',
+    ...insertRows('sanction_specialDates', specialDates, rowVersionColumns, {}, { identityInsert: true }),
+    '',
+    ...insertRows('sanctionArchive', sanctionArchive, rowVersionColumns),
     '',
     'commit transaction;',
     'go',
@@ -86,7 +96,11 @@ try {
     'union all',
     "select 'venues', count(*) from dbo.venues",
     'union all',
-    "select 'tblagegroups', count(*) from dbo.tblagegroups;",
+    "select 'tblagegroups', count(*) from dbo.tblagegroups",
+    'union all',
+    "select 'sanction_specialDates', count(*) from dbo.sanction_specialDates",
+    'union all',
+    "select 'sanctionArchive', count(*) from dbo.sanctionArchive;",
     'go',
     '',
   ].join('\n');
@@ -101,6 +115,8 @@ try {
   console.log(`tournamentNotes=${tournamentNotes.length}`);
   console.log(`venues=${venues.length}`);
   console.log(`tblagegroups=${ageGroups.length}`);
+  console.log(`sanction_specialDates=${specialDates.length}`);
+  console.log(`sanctionArchive=${sanctionArchive.length}`);
   console.log(`inactive_or_non_junior_referenced_clubs=${clubs.filter((row) => text(row.active) !== 'Y' || text(row.grouping) !== 'Juniors').length}`);
 } finally {
   await pool.close();
@@ -156,6 +172,25 @@ async function queryTournamentNotes(sanctionIds) {
     from dbo.tournamentNotes
     where SanctionKey in (${placeholders})
     order by SanctionKey
+  `);
+
+  return result.recordset;
+}
+
+async function querySanctionArchive(sanctionIds) {
+  if (sanctionIds.length === 0) {
+    return [];
+  }
+
+  const request = pool.request();
+  sanctionIds.forEach((sanctionId, index) => request.input(`sanctionId${index}`, sql.NVarChar, sanctionId));
+  const placeholders = sanctionIds.map((_, index) => `@sanctionId${index}`).join(', ');
+
+  const result = await request.query(`
+    select *
+    from dbo.sanctionArchive
+    where uniqueid in (${placeholders})
+    order by uniqueid
   `);
 
   return result.recordset;
