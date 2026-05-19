@@ -45,13 +45,6 @@ export const routes: Routes = [
     canActivate: [authGuard],
     title: 'Admin Current Sanction Requests'
   },
-  // {
-  //   path: 'outdoor-scoring',
-  //   component: OutdoorScoringPageComponent,
-  //   canActivate: [authGuard],
-  //   data: { requiredRole: 'master' },
-  //   title: 'Outdoor Scoring'
-  // },
   {
     path: 'migration',
     component: MigrationPageComponent,

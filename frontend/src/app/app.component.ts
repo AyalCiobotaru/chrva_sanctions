@@ -53,7 +53,6 @@ export class AppComponent implements OnInit, OnDestroy {
     { path: '/coordinators', label: 'Coordinators' },
     { path: '/tournaments', label: 'AES Tournaments' },
     { path: '/admin/sanction-requests/current', label: 'Sanction Requests' },
-    // { path: '/outdoor-scoring', label: 'Outdoor Scoring', role: 'master' },
     { path: '/migration', label: 'Migration', role: 'master' }
   ];
   readonly clubNavItems: NavItem[] = [
