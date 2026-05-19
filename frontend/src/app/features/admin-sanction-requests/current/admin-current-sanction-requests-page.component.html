@@ -1,9 +1,65 @@
 <section class="page-header">
   <div>
-    <h1>Current Sanction Requests</h1>
+    <h1>Sanction Requests</h1>
     <p>Review submitted tournament sanction requests by season, club, week, status, and division.</p>
   </div>
 </section>
+
+@if (reviewingRequest) {
+  <app-modal (closed)="closeReview()">
+    <form [formGroup]="reviewForm" class="review-form" (ngSubmit)="submitReview()">
+      <h2>Review Sanction Request</h2>
+      <p>
+        {{ reviewingRequest.clubCode }} · {{ reviewingRequest.date || 'No date' }} ·
+        {{ reviewingRequest.division }} · {{ reviewingRequest.name }}
+      </p>
+
+      @if (reviewError) {
+        <p class="error-message">{{ reviewError }}</p>
+      }
+
+      <div class="review-grid">
+        <label>
+          Sanction Status
+          <select formControlName="sanctionStatus">
+            @for (status of statusOptions; track status) {
+              <option [value]="status">{{ status }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Priority
+          <select formControlName="priority">
+            @for (priority of priorityOptions; track priority) {
+              <option [value]="priority">{{ priority }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Sanction ID
+          <input formControlName="sanctionId" maxlength="15" />
+        </label>
+
+        <label class="wide">
+          Notes
+          <textarea formControlName="sanctionNotes" rows="4"></textarea>
+        </label>
+      </div>
+
+      <p class="review-hint">
+        Legacy approval updates the request only. Approved requests are posted to the public tournament table in a separate step.
+        Leave Sanction ID as New when approving to assign the next available ID.
+      </p>
+
+      <div class="review-actions">
+        <button type="submit" [disabled]="savingReview">{{ savingReview ? 'Saving...' : 'Save Review' }}</button>
+        <button type="button" class="secondary" [disabled]="savingReview" (click)="closeReview()">Cancel</button>
+      </div>
+    </form>
+  </app-modal>
+}
 
 @if (vm$ | async; as vm) {
   <section class="summary-bar" aria-label="Request counts">
@@ -55,18 +111,16 @@
     <label>
       Season
       <select formControlName="season">
-        @for (season of vm.options.seasons; track season) {
+        @for (season of vm.seasonOptions; track season) {
           <option [value]="season">{{ season }}</option>
         }
       </select>
+    </label> 
+    
+    <label>
+      Week
+      <input formControlName="weekNumber" inputmode="numeric" />
     </label>
-
-    <app-multi-select-dropdown
-      formControlName="divisions"
-      label="Divisions"
-      placeholder="All divisions"
-      [options]="vm.divisionOptions"
-    ></app-multi-select-dropdown>
 
     <label>
       Club
@@ -76,21 +130,6 @@
           <option [value]="club.clubCode">{{ club.clubName || club.clubCode }} ({{ club.clubCode }})</option>
         }
       </select>
-    </label>
-
-    <label>
-      Week
-      <input formControlName="weekNumber" inputmode="numeric" />
-    </label>
-
-    <label>
-      From
-      <input type="date" formControlName="fromDate" />
-    </label>
-
-    <label>
-      To
-      <input type="date" formControlName="toDate" />
     </label>
 
     <label>
@@ -115,6 +154,25 @@
         <option value="Power">Power</option>
       </select>
     </label>
+
+    <app-multi-select-dropdown
+      formControlName="divisions"
+      label="Divisions"
+      placeholder="All divisions"
+      [options]="vm.divisionOptions"
+    ></app-multi-select-dropdown>
+
+    <label>
+      From
+      <input type="date" formControlName="fromDate" />
+    </label>
+
+    <label>
+      To
+      <input type="date" formControlName="toDate" />
+    </label>
+
+    
   </form>
 
   @if (form.controls.duplicateSanctionId.value) {
@@ -150,6 +208,7 @@
               <th>Location</th>
               <th>Notes</th>
               <th>Contact</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -213,6 +272,13 @@
                     <a [href]="mailto(request)">Email</a>
                     <small>{{ request.tournamentDirectorName }}</small>
                   }
+                </td>
+                <td>
+                  <div class="row-actions">
+                    <button type="button" (click)="openReview(request, 'Approved')">Approve</button>
+                    <button type="button" class="secondary" (click)="openReview(request, 'Denied')">Deny</button>
+                    <button type="button" class="secondary" (click)="openReview(request)">Edit</button>
+                  </div>
                 </td>
               </tr>
             }

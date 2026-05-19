@@ -1008,6 +1008,96 @@ export async function getAdminCurrentSanctionRequests(filters) {
   };
 }
 
+export async function updateAdminSanctionRequestReview(requestId, body) {
+  const id = Number(requestId);
+  const allowedStatuses = new Set([
+    'Approved',
+    'Denied',
+    'Pending',
+    'SO',
+    'Posted',
+    'Question',
+    'Regionals',
+    'Cancelled',
+    'Suspended'
+  ]);
+  const sanctionStatus = text(body?.sanctionStatus);
+  const priority = Number.parseInt(body?.priority, 10);
+  let sanctionId = text(body?.sanctionId);
+  const sanctionNotes = text(body?.sanctionNotes);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    const error = new Error('Sanction request id is invalid.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  if (!allowedStatuses.has(sanctionStatus)) {
+    const error = new Error('Sanction status is invalid.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  if (!Number.isInteger(priority) || priority < 0 || priority > 9) {
+    const error = new Error('Priority must be a number from 0 to 9.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const pool = await getPool();
+  const existing = await getAdminSanctionRequestById(pool, id);
+
+  if (!existing) {
+    const error = new Error('Sanction request was not found.');
+    error.statusCode = 404;
+    error.code = 'ERR_SANCTION_REQUEST_NOT_FOUND';
+    throw error;
+  }
+
+  if (sanctionStatus === 'Approved' && (!sanctionId || sanctionId === 'New')) {
+    sanctionId = await getNextSanctionId(pool, existing.division, existing.date);
+  }
+
+  if (sanctionStatus === 'Denied' && (!sanctionId || sanctionId === 'New')) {
+    sanctionId = 'Denied';
+  }
+
+  if (!sanctionId) {
+    const error = new Error('Sanction ID is required.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  if (sanctionId.length > 15) {
+    const error = new Error('Sanction ID must be 15 characters or fewer.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  await pool.request()
+    .input('id', sql.Int, id)
+    .input('sanctionId', sql.NVarChar, sanctionId)
+    .input('priority', sql.TinyInt, priority)
+    .input('sanctionNotes', sql.NVarChar, sanctionNotes)
+    .input('sanctionStatus', sql.VarChar, sanctionStatus)
+    .query(`
+      update sanction_requested
+      set sanctionid = @sanctionId,
+        priority = @priority,
+        sanctionNotes = @sanctionNotes,
+        sanctionStatus = @sanctionStatus,
+        updated = getdate()
+      where id = @id
+    `);
+
+  return getAdminSanctionRequestById(pool, id);
+}
+
 export async function searchTournaments(filters) {
   const pool = await getPool();
   const config = getAppConfig();
@@ -1342,6 +1432,116 @@ async function getDuplicateAdminSanctionIds(pool, filters, season) {
   }));
 }
 
+async function getAdminSanctionRequestById(pool, id) {
+  const result = await pool.request()
+    .input('id', sql.Int, id)
+    .query(`
+      with request as (
+        select
+          sr.*,
+          (case when datepart(w, sr.dte) = 1 then datepart(ww, sr.dte) - 1 else datepart(ww, sr.dte) end) as weekNumber,
+          (case
+            when datepart(weekday, sr.dte) > 5 then dateadd(week, -3, dateadd(day, 4, dateadd(week, datediff(week, 0, sr.dte), 0)))
+            else dateadd(week, -3, dateadd(day, -3, dateadd(week, datediff(week, 0, sr.dte), 0)))
+          end) as computedCloseDate
+        from sanction_requested sr
+        where sr.id = @id
+      ),
+      archive as (
+        select uniqueid, max(status) as archiveStatus
+        from sanctionArchive
+        group by uniqueid
+      )
+      select
+        r.id,
+        r.sanctionid,
+        r.sanctionStatus,
+        r.sanctionNotes,
+        r.submitDate,
+        r.dte,
+        r.startTime,
+        r.priority,
+        r.division,
+        r.type,
+        r.number_of_teams,
+        r.entry_fee,
+        r.tournname,
+        r.site,
+        r.clubcode,
+        r.HDP,
+        r.SAGO,
+        r.AES_added,
+        r.TournamentDirector_Email,
+        r.TournamentDirector_Name,
+        r.weekNumber,
+        r.computedCloseDate,
+        cc.ClubName,
+        sd.id as specialDateId,
+        sd.label as specialDateLabel,
+        sd.notes as specialDateNotes,
+        archive.archiveStatus
+      from request r
+      left join clubcontacts cc on r.clubcode = cc.ClubCode
+      left join sanction_specialDates sd on r.weekNumber = sd.week
+      left join archive on r.sanctionid = archive.uniqueid
+    `);
+
+  return result.recordset[0] ? mapAdminSanctionRequest(result.recordset[0]) : null;
+}
+
+async function getNextSanctionId(pool, division, dateValue) {
+  const code = getSanctionDivisionCode(division);
+  const year = dateValue ? new Date(dateValue).getFullYear() : Number(getAppConfig().currentSeason);
+  const yy = String(year).slice(-2);
+
+  if (!code) {
+    const error = new Error('A sanction ID is required for this division.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const prefix = `${code}-%`;
+  const result = await pool.request()
+    .input('prefix', sql.NVarChar, `${prefix}%`)
+    .input('yy', sql.NVarChar, `_${yy}`)
+    .query(`
+      select max(try_convert(int, substring(
+        sanctionid,
+        charindex('-', sanctionid) + 1,
+        charindex('_', sanctionid) - charindex('-', sanctionid) - 1
+      ))) as maxNumber
+      from sanction_requested
+      where sanctionid like @prefix
+        and right(sanctionid, 3) = @yy
+        and sanctionStatus not in ('SO', 'Denied')
+        and charindex('-', sanctionid) > 0
+        and charindex('_', sanctionid) > charindex('-', sanctionid)
+    `);
+  const next = (result.recordset[0]?.maxNumber ?? 0) + 1;
+  const padded = next < 10 ? `0${next}` : String(next);
+
+  return `${code}-${padded}_${yy}`;
+}
+
+function getSanctionDivisionCode(division) {
+  const normalized = text(division).toLowerCase();
+  const suffix = normalized.startsWith('boys') ? 'B' : '';
+  const numbers = normalized.match(/\d+/g) ?? [];
+
+  if (numbers.length === 0) {
+    return '';
+  }
+
+  const ordered = numbers
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value))
+    .sort((a, b) => a - b)
+    .join('');
+
+  return ordered ? `CH${ordered}${suffix}` : '';
+}
+
 function addAdminSanctionRequestFilters(where, request, filters, season, options = {}) {
   const includeStatus = options.includeStatus !== false;
   const includeHdp = options.includeHdp !== false;
@@ -1434,6 +1634,7 @@ function mapAdminSanctionRequest(row) {
   return {
     id: String(row.id),
     sanctionId,
+    suggestedSanctionId: '',
     sanctionStatus: text(row.sanctionStatus),
     statusCode: text(row.sanctionStatus).slice(0, 2),
     archiveStatus: text(row.archiveStatus).slice(0, 1),

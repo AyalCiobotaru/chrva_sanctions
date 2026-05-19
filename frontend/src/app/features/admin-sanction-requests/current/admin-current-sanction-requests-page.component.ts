@@ -1,13 +1,15 @@
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { map, startWith, switchMap, tap } from 'rxjs';
+import { map, merge, startWith, Subject, switchMap, tap } from 'rxjs';
 import {
   AdminCurrentSanctionRequestsResult,
   AdminSanctionRequestSearch,
   AdminSanctionRequestSummary
 } from '../../../core/api.models';
 import { ChrvaApiService } from '../../../core/chrva-api.service';
+import { getHttpErrorMessage } from '../../../core/http-error';
+import { ModalComponent } from '../../../util/modal/modal.component';
 import { MultiSelectDropdownComponent, MultiSelectOption } from '../../../util/multi-select-dropdown/multi-select-dropdown.component';
 
 interface AdminSanctionRequestWeekGroup {
@@ -21,11 +23,13 @@ interface AdminSanctionRequestWeekGroup {
 @Component({
   selector: 'app-admin-current-sanction-requests-page',
   standalone: true,
-  imports: [AsyncPipe, CurrencyPipe, MultiSelectDropdownComponent, ReactiveFormsModule],
+  imports: [AsyncPipe, CurrencyPipe, ModalComponent, MultiSelectDropdownComponent, ReactiveFormsModule],
   templateUrl: './admin-current-sanction-requests-page.component.html',
   styleUrl: './admin-current-sanction-requests-page.component.scss'
 })
 export class AdminCurrentSanctionRequestsPageComponent {
+  private readonly firstLegacySeason = 2016;
+
   readonly form = this.fb.nonNullable.group({
     season: '2026',
     divisions: [[] as string[]],
@@ -40,13 +44,28 @@ export class AdminCurrentSanctionRequestsPageComponent {
     duplicateSanctionId: ''
   });
 
+  readonly reviewForm = this.fb.nonNullable.group({
+    sanctionStatus: 'Pending',
+    sanctionId: '',
+    priority: '0',
+    sanctionNotes: ''
+  });
+
+  readonly statusOptions = ['Approved', 'Denied', 'Pending', 'SO', 'Posted', 'Question', 'Regionals', 'Cancelled', 'Suspended'];
+  readonly priorityOptions = ['0', '1', '2', '3', '4', '5', '6', '9'];
+  readonly refresh$ = new Subject<void>();
+  reviewingRequest: AdminSanctionRequestSummary | null = null;
+  reviewError = '';
+  savingReview = false;
+
   readonly vm$ = this.api.getConfig().pipe(
     tap((config) => this.form.controls.season.setValue(config.currentSeason, { emitEvent: false })),
-    switchMap(() => this.form.valueChanges.pipe(
+    switchMap((config) => merge(this.form.valueChanges, this.refresh$).pipe(
       startWith(this.form.getRawValue()),
       switchMap(() => this.api.getAdminCurrentSanctionRequests(this.toSearch(this.form.getRawValue()))),
       map((result) => ({
         ...result,
+        seasonOptions: this.buildSeasonOptions(Number(config.nextSeason || config.currentSeason)),
         divisionOptions: this.toDivisionOptions(result),
         groups: this.toWeekGroups(result.requests)
       }))
@@ -98,6 +117,47 @@ export class AdminCurrentSanctionRequestsPageComponent {
     this.form.controls.duplicateSanctionId.setValue('');
   }
 
+  openReview(request: AdminSanctionRequestSummary, sanctionStatus = request.sanctionStatus): void {
+    this.reviewingRequest = request;
+    this.reviewError = '';
+    this.reviewForm.setValue({
+      sanctionStatus,
+      sanctionId: request.sanctionId || 'New',
+      priority: request.hdp && sanctionStatus === 'Approved' ? '1' : request.priority ?? '0',
+      sanctionNotes: request.sanctionNotes
+    });
+  }
+
+  closeReview(): void {
+    if (this.savingReview) {
+      return;
+    }
+
+    this.reviewingRequest = null;
+    this.reviewError = '';
+  }
+
+  submitReview(): void {
+    if (!this.reviewingRequest) {
+      return;
+    }
+
+    this.savingReview = true;
+    this.reviewError = '';
+
+    this.api.updateAdminSanctionRequestReview(this.reviewingRequest.id, this.reviewForm.getRawValue()).subscribe({
+      next: () => {
+        this.savingReview = false;
+        this.reviewingRequest = null;
+        this.refresh$.next();
+      },
+      error: (error) => {
+        this.savingReview = false;
+        this.reviewError = getHttpErrorMessage(error, 'Unable to update sanction request.');
+      }
+    });
+  }
+
   mailto(request: AdminSanctionRequestSummary): string {
     const subject = `Tournament: ${request.clubCode} ${request.date ?? ''} - ${request.division} ${request.type}`.trim();
     const body = `Hi ${request.tournamentDirectorName || 'Tournament Director'},`;
@@ -125,6 +185,17 @@ export class AdminCurrentSanctionRequestsPageComponent {
       value: ageGroup,
       label: ageGroup
     }));
+  }
+
+  private buildSeasonOptions(latestSeason: number): string[] {
+    const latest = Number.isFinite(latestSeason) ? latestSeason : new Date().getFullYear();
+    const seasons = [];
+
+    for (let season = latest; season >= this.firstLegacySeason; season -= 1) {
+      seasons.push(String(season));
+    }
+
+    return seasons;
   }
 
   private toWeekGroups(requests: AdminSanctionRequestSummary[]): AdminSanctionRequestWeekGroup[] {

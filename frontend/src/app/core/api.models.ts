@@ -352,6 +352,7 @@ export interface AdminSanctionRequestSpecialDate {
 export interface AdminSanctionRequestSummary {
   id: string;
   sanctionId: string;
+  suggestedSanctionId: string;
   sanctionStatus: string;
   statusCode: string;
   archiveStatus: string;
@@ -391,6 +392,13 @@ export interface AdminCurrentSanctionRequestsResult {
   counts: AdminSanctionRequestCounts;
   duplicateSanctionIds: DuplicateSanctionId[];
   requests: AdminSanctionRequestSummary[];
+}
+
+export interface AdminSanctionRequestReviewRequest {
+  sanctionStatus: string;
+  sanctionId: string;
+  priority: string;
+  sanctionNotes: string;
 }
 
 export interface UpdateTournamentAddedToAesRequest {
