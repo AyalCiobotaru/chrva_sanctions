@@ -141,6 +141,7 @@ export async function handleApiRequest(request, response) {
       return json(response, await migrationInventory());
     }
 
+
     requireSession(request);
 
     if (route === 'GET /api/clubs') {
@@ -208,6 +209,13 @@ export async function handleApiRequest(request, response) {
       message: error.message
     }, status);
   }
+}
+
+function httpError(statusCode, message, code) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.code = code;
+  return error;
 }
 
 async function migrationInventory() {
