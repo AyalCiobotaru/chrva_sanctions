@@ -1,7 +1,18 @@
-<app-sanction-request-page-header title="Sanction Form" />
+<app-sanction-request-page-header [title]="editRequestId ? 'Edit Sanction Request' : 'Sanction Form'" />
 
 @if (options$ | async; as options) {
   <form class="request-form" [formGroup]="form" (ngSubmit)="submit()">
+    @if (loadingRenewal) {
+      <p class="renewal-banner">Loading renewal details...</p>
+    } @else if (renewalSourceText) {
+      <p class="renewal-banner">Renewing {{ renewalSourceText }}</p>
+    }
+    @if (loadingEdit) {
+      <p class="renewal-banner">Loading sanction request...</p>
+    } @else if (editSourceText) {
+      <p class="renewal-banner">Editing {{ editSourceText }}</p>
+    }
+
     <section>
       <h2>Club Information</h2>
       <div class="field full">
@@ -291,8 +302,12 @@
         <p class="submit-error" role="alert">{{ submitError }}</p>
       }
       <span class="submit-tooltip" [title]="submitDisabledReason">
-        <button type="submit" [disabled]="form.invalid || submitting" [attr.aria-disabled]="form.invalid || submitting">
-          {{ submitting ? 'Submitting...' : 'Submit Request' }}
+        <button
+          type="submit"
+          [disabled]="form.invalid || submitting || loadingEdit || loadingRenewal"
+          [attr.aria-disabled]="form.invalid || submitting || loadingEdit || loadingRenewal"
+        >
+          {{ submitting ? 'Submitting...' : editRequestId ? 'Save Request' : 'Submit Request' }}
         </button>
       </span>
     </div>

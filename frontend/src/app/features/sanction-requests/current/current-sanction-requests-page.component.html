@@ -7,9 +7,14 @@
     </p>
   </section>
 
+  @if (actionError) {
+    <p class="action-error" role="alert">{{ actionError }}</p>
+  }
+
   <table>
     <thead>
       <tr>
+        <th>Actions</th>
         <th>Status</th>
         <th>Week</th>
         <th>Date</th>
@@ -24,6 +29,20 @@
     <tbody>
       @for (request of current.requests; track request.id) {
         <tr [class.hdp]="request.hdp">
+          <td class="actions-cell">
+            <a class="request-link" [routerLink]="['/sanction-requests', request.id, 'print']">Print</a>
+            @if (request.canModify) {
+              <a class="request-link secondary" [routerLink]="['/sanction-requests', request.id, 'edit']">Edit</a>
+              <button
+                type="button"
+                class="request-link danger"
+                [disabled]="deletingId === request.id"
+                (click)="deleteRequest(request.id, request.name)"
+              >
+                {{ deletingId === request.id ? 'Deleting...' : 'Delete' }}
+              </button>
+            }
+          </td>
           <td>{{ request.sanctionStatus }}</td>
           <td>{{ request.weekNumber }}</td>
           <td>{{ request.date | date: 'MM/dd/yy' }}</td>
@@ -44,7 +63,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="9" class="empty">No current sanction requests were found.</td>
+          <td colspan="10" class="empty">No current sanction requests were found.</td>
         </tr>
       }
     </tbody>

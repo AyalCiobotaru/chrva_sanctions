@@ -33,7 +33,14 @@
             @if (tournament.renewalStatus) {
               {{ tournament.renewalStatus }}
             } @else {
-              {{ tournament.proposedRenewalDate | date: 'MM/dd/yyyy' }}
+              <a
+                class="request-link"
+                routerLink="/sanction-requests/new"
+                [queryParams]="{ renewFrom: tournament.id }"
+              >
+                Request
+              </a>
+              <small>{{ tournament.proposedRenewalDate | date: 'MM/dd/yyyy' }}</small>
             }
           </td>
         </tr>
