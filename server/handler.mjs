@@ -24,9 +24,11 @@ import {
   getAppConfig,
   getSanctionRequestFormOptions,
   getSanctionRequestHistory,
+  getTournamentDirectorEmailBroadcast,
   searchClubs,
   searchCoordinators,
   sendClubEmailBroadcast,
+  sendTournamentDirectorEmailBroadcast,
   searchTournaments,
   updateClub,
   updateAdminSanctionRequestReview,
@@ -179,6 +181,14 @@ export async function handleApiRequest(request, response) {
 
     if (route === 'GET /api/admin/sanction-requests/current') {
       return json(response, await getAdminCurrentSanctionRequests(url.searchParams));
+    }
+
+    if (route === 'GET /api/admin/sanction-requests/tournament-director-email') {
+      return json(response, await getTournamentDirectorEmailBroadcast(url.searchParams));
+    }
+
+    if (route === 'POST /api/admin/sanction-requests/tournament-director-email') {
+      return json(response, await sendTournamentDirectorEmailBroadcast(url.searchParams, await readJson(request)));
     }
 
     if (request.method === 'PUT' && url.pathname.startsWith('/api/admin/sanction-requests/') && url.pathname.endsWith('/review')) {

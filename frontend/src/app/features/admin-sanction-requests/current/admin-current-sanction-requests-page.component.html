@@ -3,7 +3,70 @@
     <h1>Sanction Requests</h1>
     <p>Review submitted tournament sanction requests by season, club, week, status, and division.</p>
   </div>
+  <div class="actions">
+    <button type="button" (click)="openTournamentDirectorEmail()">Email to Directors</button>
+  </div>
 </section>
+
+@if (emailBroadcast) {
+  <app-modal (closed)="closeTournamentDirectorEmail()">
+    <form [formGroup]="emailForm" class="email-form" (ngSubmit)="sendTournamentDirectorEmail()">
+      <h2>Email to Directors</h2>
+      <p>
+        Season {{ emailBroadcast.season }} · {{ emailBroadcast.recipientCount }} recipients from the current request filters.
+      </p>
+
+      @if (emailError) {
+        <p class="error-message">{{ emailError }}</p>
+      }
+      @if (emailStatus) {
+        <p class="notice-message">{{ emailStatus }}</p>
+      }
+      @if (!emailBroadcast.deliveryConfigured) {
+        <p class="notice-message">Email delivery is not configured, so this will validate as a dry run until SMTP settings are added.</p>
+      }
+
+      <label>
+        From
+        <select formControlName="from">
+          <option value="">Select from address</option>
+          @for (sender of emailBroadcast.fromOptions; track sender.email) {
+            <option [value]="sender.email">{{ sender.name }} &lt;{{ sender.email }}&gt;</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Subject
+        <input formControlName="subject" maxlength="80" />
+      </label>
+
+      <app-rich-text-editor
+        formControlName="information"
+        label="Message"
+        placeholder="Compose email..."
+      ></app-rich-text-editor>
+
+      @if (emailBroadcast.recipients.length) {
+        <div class="recipient-list">
+          @for (recipient of emailBroadcast.recipients; track recipient.email) {
+            <span>
+              {{ recipient.email }}
+              <button type="button" aria-label="Remove recipient" (click)="removeEmailRecipient(recipient)">Remove</button>
+            </span>
+          }
+        </div>
+      }
+
+      <div class="review-actions">
+        <button type="submit" [disabled]="emailForm.invalid || !emailBroadcast.recipientCount || sendingEmail">
+          {{ sendingEmail ? 'Sending...' : 'Send' }}
+        </button>
+        <button type="button" class="secondary" [disabled]="sendingEmail" (click)="closeTournamentDirectorEmail()">Cancel</button>
+      </div>
+    </form>
+  </app-modal>
+}
 
 @if (reviewingRequest) {
   <app-modal (closed)="closeReview()">
