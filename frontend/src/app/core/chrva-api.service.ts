@@ -16,6 +16,7 @@ import {
   CreateSanctionRequestResult,
   CoordinatorSearch,
   CoordinatorSummary,
+  DeleteSanctionRequestResult,
   LegacyConfig,
   MigrationInventory,
   NewClubRequest,
@@ -24,6 +25,8 @@ import {
   SanctionClubLoginRequest,
   SanctionClubSession,
   SanctionHistoryResult,
+  SanctionRequestDetailResult,
+  SanctionRequestRenewalResult,
   SanctionRequestFormOptions,
   TournamentSearch,
   TournamentSummary,
@@ -80,8 +83,33 @@ export class ChrvaApiService {
     return this.http.get<SanctionRequestFormOptions>(`${this.baseUrl}/sanction-requests/form-options`);
   }
 
+  getSanctionRequestRenewal(sourceId: string): Observable<SanctionRequestRenewalResult> {
+    return this.http.get<SanctionRequestRenewalResult>(
+      `${this.baseUrl}/sanction-requests/renewal/${encodeURIComponent(sourceId)}`
+    );
+  }
+
+  getSanctionRequest(requestId: string): Observable<SanctionRequestDetailResult> {
+    return this.http.get<SanctionRequestDetailResult>(
+      `${this.baseUrl}/sanction-requests/${encodeURIComponent(requestId)}`
+    );
+  }
+
   createSanctionRequest(request: NewSanctionRequest): Observable<CreateSanctionRequestResult> {
     return this.http.post<CreateSanctionRequestResult>(`${this.baseUrl}/sanction-requests`, request);
+  }
+
+  updateSanctionRequest(requestId: string, request: NewSanctionRequest): Observable<SanctionRequestDetailResult> {
+    return this.http.put<SanctionRequestDetailResult>(
+      `${this.baseUrl}/sanction-requests/${encodeURIComponent(requestId)}`,
+      request
+    );
+  }
+
+  deleteSanctionRequest(requestId: string): Observable<DeleteSanctionRequestResult> {
+    return this.http.delete<DeleteSanctionRequestResult>(
+      `${this.baseUrl}/sanction-requests/${encodeURIComponent(requestId)}`
+    );
   }
 
   searchClubs(search: ClubSearch): Observable<ClubSearchResult> {

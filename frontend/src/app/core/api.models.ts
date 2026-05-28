@@ -102,6 +102,7 @@ export interface SanctionRequestFormOptions {
 }
 
 export interface NewSanctionRequest {
+  sanctionId?: string;
   tournamentContactName: string;
   tournamentDirectorName: string;
   tournamentContactAddress: string;
@@ -144,11 +145,40 @@ export interface NewSanctionRequest {
   otherIncome: string;
 }
 
+export interface SanctionRequestRenewalSource {
+  id: string;
+  sanctionId: string;
+  date: string | null;
+  division: string;
+  site: string;
+}
+
+export interface SanctionRequestRenewalResult {
+  source: SanctionRequestRenewalSource;
+  request: NewSanctionRequest;
+}
+
+export interface SanctionRequestDetailResult {
+  id: string;
+  club: SanctionClub;
+  sanctionId: string;
+  sanctionStatus: string;
+  submitDate: string | null;
+  weekNumber: number | null;
+  canModify: boolean;
+  request: NewSanctionRequest;
+}
+
 export interface CreateSanctionRequestResult {
   id: string;
   sanctionId: string;
   status: string;
   submittedDate: string | null;
+}
+
+export interface DeleteSanctionRequestResult {
+  id: string;
+  deleted: boolean;
 }
 
 export interface ClubSearch {

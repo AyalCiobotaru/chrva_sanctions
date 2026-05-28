@@ -1,8 +1,8 @@
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { finalize, Observable, take } from 'rxjs';
 import { SanctionVenueOption } from '../../../core/api.models';
 import { ChrvaApiService } from '../../../core/chrva-api.service';
 import { getHttpErrorMessage } from '../../../core/http-error';
@@ -16,7 +16,7 @@ import { SanctionRequestPageHeaderComponent } from '../page-header/sanction-requ
   templateUrl: './sanction-request-form-page.component.html',
   styleUrl: './sanction-request-form-page.component.scss'
 })
-export class SanctionRequestFormPageComponent {
+export class SanctionRequestFormPageComponent implements OnInit {
   readonly options$ = this.api.getSanctionRequestFormOptions();
   private readonly requiredFields = [
     { controlName: 'tournamentContactName', label: 'Club Contact Name' },
@@ -39,7 +39,12 @@ export class SanctionRequestFormPageComponent {
     { controlName: 'requester', label: 'Person Submitting Request' }
   ];
   submitting = false;
+  loadingRenewal = false;
+  loadingEdit = false;
   submitError = '';
+  renewalSourceText = '';
+  editSourceText = '';
+  editRequestId = '';
   readonly paymentTypeOptions: MultiSelectOption[] = [
     { value: 'Credit Card', label: 'Credit Card' },
     { value: 'Zelle', label: 'Zelle' },
@@ -48,6 +53,7 @@ export class SanctionRequestFormPageComponent {
   ];
 
   readonly form = this.fb.nonNullable.group({
+    sanctionId: [''],
     tournamentContactName: ['', Validators.required],
     tournamentDirectorName: ['', Validators.required],
     tournamentContactAddress: ['', Validators.required],
@@ -93,8 +99,68 @@ export class SanctionRequestFormPageComponent {
   constructor(
     private readonly api: ChrvaApiService,
     private readonly fb: FormBuilder,
+    private readonly route: ActivatedRoute,
     private readonly router: Router
   ) {}
+
+  ngOnInit(): void {
+    this.route.queryParamMap.pipe(take(1)).subscribe((params) => {
+      const sourceId = params.get('renewFrom');
+
+      if (!sourceId) {
+        return;
+      }
+
+      this.loadingRenewal = true;
+      this.api.getSanctionRequestRenewal(sourceId).pipe(
+        finalize(() => {
+          this.loadingRenewal = false;
+        })
+      ).subscribe({
+        next: (renewal) => {
+          this.form.patchValue(renewal.request);
+          this.renewalSourceText = [
+            renewal.source.sanctionId,
+            renewal.source.date,
+            renewal.source.division,
+            renewal.source.site
+          ].filter(Boolean).join(' - ');
+        },
+        error: (error: unknown) => {
+          this.submitError = getHttpErrorMessage(error, 'Unable to load sanction renewal.');
+        }
+      });
+    });
+
+    this.route.paramMap.pipe(take(1)).subscribe((params) => {
+      const requestId = params.get('id');
+
+      if (!requestId) {
+        return;
+      }
+
+      this.editRequestId = requestId;
+      this.loadingEdit = true;
+      this.api.getSanctionRequest(requestId).pipe(
+        finalize(() => {
+          this.loadingEdit = false;
+        })
+      ).subscribe({
+        next: (request) => {
+          this.form.patchValue(request.request);
+          this.editSourceText = [
+            request.sanctionId,
+            request.request.date,
+            request.request.division,
+            request.request.site
+          ].filter(Boolean).join(' - ');
+        },
+        error: (error: unknown) => {
+          this.submitError = getHttpErrorMessage(error, 'Unable to load sanction request.');
+        }
+      });
+    });
+  }
 
   submit(): void {
     this.submitError = '';
@@ -106,7 +172,11 @@ export class SanctionRequestFormPageComponent {
     }
 
     this.submitting = true;
-    this.api.createSanctionRequest(this.form.getRawValue()).pipe(
+    const saveRequest$: Observable<unknown> = this.editRequestId
+      ? this.api.updateSanctionRequest(this.editRequestId, this.form.getRawValue())
+      : this.api.createSanctionRequest(this.form.getRawValue());
+
+    saveRequest$.pipe(
       finalize(() => {
         this.submitting = false;
       })
@@ -171,6 +241,10 @@ export class SanctionRequestFormPageComponent {
   get submitDisabledReason(): string {
     if (this.submitting) {
       return 'Submitting request.';
+    }
+
+    if (this.loadingEdit || this.loadingRenewal) {
+      return 'Loading request.';
     }
 
     if (this.form.valid) {
