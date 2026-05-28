@@ -1,16 +1,19 @@
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { map, merge, startWith, Subject, switchMap, tap } from 'rxjs';
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { finalize, map, merge, startWith, Subject, switchMap, tap } from 'rxjs';
 import {
   AdminCurrentSanctionRequestsResult,
   AdminSanctionRequestSearch,
-  AdminSanctionRequestSummary
+  AdminSanctionRequestSummary,
+  ClubEmailRecipient,
+  TournamentDirectorEmailBroadcast
 } from '../../../core/api.models';
 import { ChrvaApiService } from '../../../core/chrva-api.service';
 import { getHttpErrorMessage } from '../../../core/http-error';
 import { ModalComponent } from '../../../util/modal/modal.component';
 import { MultiSelectDropdownComponent, MultiSelectOption } from '../../../util/multi-select-dropdown/multi-select-dropdown.component';
+import { RichTextEditorComponent } from '../../../util/rich-text-editor/rich-text-editor.component';
 
 interface AdminSanctionRequestWeekGroup {
   key: string;
@@ -23,7 +26,7 @@ interface AdminSanctionRequestWeekGroup {
 @Component({
   selector: 'app-admin-current-sanction-requests-page',
   standalone: true,
-  imports: [AsyncPipe, CurrencyPipe, ModalComponent, MultiSelectDropdownComponent, ReactiveFormsModule],
+  imports: [AsyncPipe, CurrencyPipe, ModalComponent, MultiSelectDropdownComponent, ReactiveFormsModule, RichTextEditorComponent],
   templateUrl: './admin-current-sanction-requests-page.component.html',
   styleUrl: './admin-current-sanction-requests-page.component.scss'
 })
@@ -51,12 +54,22 @@ export class AdminCurrentSanctionRequestsPageComponent {
     sanctionNotes: ''
   });
 
+  readonly emailForm = this.fb.nonNullable.group({
+    from: ['', Validators.required],
+    subject: ['', Validators.required],
+    information: ['', Validators.required]
+  });
+
   readonly statusOptions = ['Approved', 'Denied', 'Pending', 'SO', 'Posted', 'Question', 'Regionals', 'Cancelled', 'Suspended'];
   readonly priorityOptions = ['0', '1', '2', '3', '4', '5', '6', '9'];
   readonly refresh$ = new Subject<void>();
   reviewingRequest: AdminSanctionRequestSummary | null = null;
+  emailBroadcast: TournamentDirectorEmailBroadcast | null = null;
   reviewError = '';
+  emailError = '';
+  emailStatus = '';
   savingReview = false;
+  sendingEmail = false;
 
   readonly vm$ = this.api.getConfig().pipe(
     tap((config) => this.form.controls.season.setValue(config.currentSeason, { emitEvent: false })),
@@ -74,6 +87,7 @@ export class AdminCurrentSanctionRequestsPageComponent {
 
   constructor(
     private readonly api: ChrvaApiService,
+    private readonly changeDetector: ChangeDetectorRef,
     private readonly fb: FormBuilder
   ) {}
 
@@ -115,6 +129,81 @@ export class AdminCurrentSanctionRequestsPageComponent {
 
   clearDuplicateFilter(): void {
     this.form.controls.duplicateSanctionId.setValue('');
+  }
+
+  openTournamentDirectorEmail(): void {
+    this.emailError = '';
+    this.emailStatus = '';
+    this.api.getTournamentDirectorEmailBroadcast(this.toSearch(this.form.getRawValue())).subscribe({
+      next: (broadcast) => {
+        this.emailBroadcast = broadcast;
+        if (broadcast.fromOptions.length > 0) {
+          this.emailForm.controls.from.setValue(broadcast.fromOptions[0].email);
+        }
+      },
+      error: (error) => {
+        this.emailError = getHttpErrorMessage(error, 'Unable to load tournament director email list.');
+      }
+    });
+  }
+
+  closeTournamentDirectorEmail(): void {
+    if (this.sendingEmail) {
+      return;
+    }
+
+    this.emailBroadcast = null;
+    this.emailError = '';
+    this.emailStatus = '';
+  }
+
+  removeEmailRecipient(recipient: ClubEmailRecipient): void {
+    if (!this.emailBroadcast) {
+      return;
+    }
+
+    const recipients = this.emailBroadcast.recipients.filter((current) => current.email !== recipient.email);
+    this.emailBroadcast = {
+      ...this.emailBroadcast,
+      recipients,
+      recipientCount: recipients.length
+    };
+  }
+
+  sendTournamentDirectorEmail(): void {
+    if (!this.emailBroadcast || this.emailForm.invalid) {
+      this.emailForm.markAllAsTouched();
+      return;
+    }
+
+    this.sendingEmail = true;
+    this.emailError = '';
+    this.emailStatus = '';
+    this.changeDetector.detectChanges();
+    const raw = this.emailForm.getRawValue();
+
+    this.api.sendTournamentDirectorEmailBroadcast(this.toSearch(this.form.getRawValue()), {
+      from: raw.from,
+      subject: raw.subject,
+      information: raw.information,
+      recipients: this.emailBroadcast.recipients
+    }).pipe(
+      finalize(() => {
+        this.sendingEmail = false;
+        this.changeDetector.detectChanges();
+      })
+    ).subscribe({
+      next: (result) => {
+        this.emailStatus = result.message;
+        this.emailBroadcast = null;
+        this.changeDetector.detectChanges();
+      },
+      error: (error) => {
+        this.emailError = getHttpErrorMessage(error, 'Unable to send tournament director email.');
+        this.emailBroadcast = null;
+        this.changeDetector.detectChanges();
+      }
+    });
   }
 
   openReview(request: AdminSanctionRequestSummary, sanctionStatus = request.sanctionStatus): void {

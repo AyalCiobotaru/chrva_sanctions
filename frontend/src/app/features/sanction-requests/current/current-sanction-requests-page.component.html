@@ -10,6 +10,9 @@
   @if (actionError) {
     <p class="action-error" role="alert">{{ actionError }}</p>
   }
+  @if (actionStatus) {
+    <p class="action-success" role="status">{{ actionStatus }}</p>
+  }
 
   <table>
     <thead>

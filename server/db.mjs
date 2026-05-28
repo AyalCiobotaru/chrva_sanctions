@@ -1,4 +1,7 @@
 import sql from 'mssql';
+import { isEmailDeliveryConfigured, sendEmail } from './mail.mjs';
+
+const NO_REPLY_EMAIL_FROM = 'no-reply@chrvajuniors.org';
 
 let poolPromise;
 
@@ -545,12 +548,25 @@ export async function createSanctionRequest(clubCode, body) {
     `);
 
   const created = result.recordset[0];
+  const emailResult = await sendSanctionRequestCreatedEmail(pool, club, request, created).catch((error) => {
+    console.error('Sanction request was created, but confirmation email delivery failed.', {
+      code: error.code,
+      message: error.message
+    });
+    return {
+      sent: false,
+      dryRun: false,
+      recipientCount: 0,
+      message: 'Sanction request was created, but confirmation email delivery failed.'
+    };
+  });
 
   return {
     id: String(created.id),
     sanctionId: text(created.sanctionid),
     status: text(created.sanctionStatus),
-    submittedDate: toDate(created.submitDate)
+    submittedDate: toDate(created.submitDate),
+    email: emailResult
   };
 }
 
@@ -988,7 +1004,7 @@ export async function getClubEmailBroadcast(filters = new URLSearchParams()) {
 
 export async function sendClubEmailBroadcast(body) {
   const subject = text(body?.subject);
-  const from = text(body?.from);
+  const from = NO_REPLY_EMAIL_FROM;
   const information = text(body?.information);
   const recipients = Array.isArray(body?.recipients)
     ? uniqueEmails(body.recipients.map((recipient) => ({
@@ -998,10 +1014,6 @@ export async function sendClubEmailBroadcast(body) {
       })))
     : [];
   const errors = [];
-
-  if (!from) {
-    errors.push('From address is required.');
-  }
 
   if (!subject) {
     errors.push('Subject is required.');
@@ -1022,11 +1034,20 @@ export async function sendClubEmailBroadcast(body) {
     throw error;
   }
 
+  const delivery = await sendRecipientEmails({
+    from,
+    recipients,
+    subject,
+    html: appendEmailFooter(information)
+  });
+
   return {
-    sent: false,
-    dryRun: true,
+    sent: delivery.sent,
+    dryRun: delivery.dryRun,
     recipientCount: recipients.length,
-    message: 'Email delivery is not configured yet. This broadcast was validated but not sent.'
+    message: delivery.dryRun
+      ? 'Email delivery is not configured. This broadcast was validated but not sent.'
+      : `Email broadcast sent to ${recipients.length} recipients.`
   };
 }
 
@@ -1128,16 +1149,126 @@ function uniqueEmails(candidates) {
 
 function clubEmailFromOptions() {
   return [
-    { email: 'peggy.vanlowe@chrvajuniors.org', name: 'Peggy Van Lowe' },
-    { email: 'scott.vanlowe@chrvajuniors.org', name: 'Scott Van Lowe' },
-    { email: 'chris.cant@chrvajuniors.org', name: 'Chris Cant' },
-    { email: 'noel.okoye@chrvajuniors.org', name: 'Noel Okoye' },
-    { email: 'corby.lawrence@chrvajuniors.org', name: 'Corby Lawrence' },
-    { email: 'dado.singer@chrvajuniors.org', name: 'Dado Singer' },
-    { email: 'lauren.leventry@chrvajuniors.org', name: 'Lauren Leventry' },
-    { email: 'laura.kuckuda@chrvajuniors.org', name: 'Laura Kuckuda' },
-    { email: 'lisa.digiacinto@chrvajuniors.org', name: 'Lisa Digiacinto' }
+    { email: NO_REPLY_EMAIL_FROM, name: 'CHRVA Juniors' }
   ];
+}
+
+function tournamentDirectorEmailFromOptions() {
+  return [
+    { email: NO_REPLY_EMAIL_FROM, name: 'CHRVA Juniors' }
+  ];
+}
+
+function appendEmailFooter(htmlBody) {
+  return `
+    ${htmlBody}
+    <hr>
+    <p>
+      Please do not reply to this email address because it is not monitored.
+      Instead, email Program Director Lauren Leventry at
+      <a href="mailto:lauren.leventry@chrvavb.org">lauren.leventry@chrvavb.org</a>
+      or contact your respective age group coordinator.
+    </p>
+  `;
+}
+
+async function sendSanctionRequestCreatedEmail(pool, club, request, created) {
+  const chairs = await getTournamentChairs(pool);
+  const to = [{ email: request.tournamentDirectorEmail, name: request.tournamentDirectorName }];
+  const subject = `Tournament Sanction Request: ${club.clubCode} ${formatUsDate(request.date)} - ${request.division} - ${request.type}`;
+  const chairName = chairs.map((chair) => chair.name).filter(Boolean).join(', ') || 'Junior Tournament Chair';
+  const from = NO_REPLY_EMAIL_FROM;
+  const htmlBody = `
+    <p>Your tournament request has been submitted.</p>
+    <p>Tournament Request Reference Number: ${html(created.id)} / If approved, Sanction Number: ${html(created.sanctionid)}</p>
+    <p>
+      Please review the tournament details below. If you need to make changes to this request, visit the Current Requests tab and click edit.
+      Once the tournament is sanctioned, tournament formats cannot be changed without notifying the CHRVA Girls Jr. Tournament Chair.
+    </p>
+    <p>
+      Tournament: ${html(request.tournamentName)} - ${html(formatUsDate(request.date))} - ${html(request.division)}<br>
+      Site: ${html(request.site)}<br>
+      Number of teams: ${html(request.numberOfTeams)}<br>
+      Format: ${html(request.poolPlay)}<br>
+      Playoffs: ${html(request.playoffFormat)}<br>
+      Entry Fee: ${html(request.entryFee)}
+    </p>
+    <hr>
+    <p>The status of your tournament request can be viewed on the Current Requests tab of the online request system.</p>
+    <p>Non-HDP requests will not be approved until after September 1st.</p>
+    <p>
+      It is the responsibility of the tournament host to complete all post tournament responsibilities on time.
+      Failure to do so by the timelines provided will prevent your club from hosting future tournaments.
+      Post reporting duties can be found in the handbook.
+    </p>
+    <p>If you have any concerns about what is required after reading the guidelines, please feel free to contact me.</p>
+    <p>Thanks!<br>${html(chairName)}<br>JR. Girls Tournament Chair</p>
+  `;
+
+  return sendEmail({
+    from,
+    to,
+    cc: chairs.map((chair) => chair.email),
+    replyTo: chairs.map((chair) => chair.email),
+    subject,
+    html: appendEmailFooter(htmlBody)
+  });
+}
+
+async function sendRecipientEmails({ from, recipients, cc = [], replyTo = [], subject, html: htmlBody }) {
+  if (!isEmailDeliveryConfigured()) {
+    const delivery = await sendEmail({
+      from,
+      to: recipients.slice(0, 1),
+      cc,
+      replyTo,
+      subject,
+      html: htmlBody
+    });
+
+    return {
+      ...delivery,
+      recipientCount: recipients.length
+    };
+  }
+
+  let sent = 0;
+  let lastMessageId = '';
+
+  for (const recipient of recipients) {
+    const delivery = await sendEmail({
+      from,
+      to: [recipient],
+      cc,
+      replyTo,
+      subject,
+      html: htmlBody
+    });
+    sent += delivery.sent ? 1 : 0;
+    lastMessageId = delivery.messageId || lastMessageId;
+  }
+
+  return {
+    sent: sent === recipients.length,
+    dryRun: false,
+    recipientCount: sent,
+    messageId: lastMessageId
+  };
+}
+
+async function getTournamentChairs(pool) {
+  const result = await pool.request().query(`
+    select email, coordfname, coordlname
+    from coordcontacts
+    where category = 'Tournament Coordinator'
+      and isnull(email, '') <> ''
+    order by coordlname, coordfname
+  `);
+
+  return result.recordset.map((row) => ({
+    email: text(row.email),
+    name: `${text(row.coordfname)} ${text(row.coordlname)}`.trim()
+  })).filter((chair) => chair.email);
 }
 
 async function getClubByCode(clubCode) {
@@ -1323,6 +1454,94 @@ export async function getAdminCurrentSanctionRequests(filters) {
     counts,
     duplicateSanctionIds,
     requests: result.recordset.map(mapAdminSanctionRequest)
+  };
+}
+
+export async function getTournamentDirectorEmailBroadcast(filters) {
+  const pool = await getPool();
+  const config = getAppConfig();
+  const selectedSeason = Number.parseInt(filters.get('season') || config.currentSeason, 10);
+  const season = Number.isInteger(selectedSeason) ? selectedSeason : Number(config.currentSeason);
+  const request = pool.request();
+  const where = addAdminSanctionRequestFilters(whereBase(), request, filters, season, { includeStatus: true });
+  const result = await request.query(`
+    select
+      sr.TournamentDirector_Email,
+      max(sr.TournamentDirector_Name) as TournamentDirector_Name,
+      max(sr.tournhost) as tournhost,
+      max(sr.clubcode) as clubcode
+    from sanction_requested sr
+    where ${where.join(' and ')}
+      and isnull(sr.TournamentDirector_Email, '') <> ''
+    group by sr.TournamentDirector_Email
+    order by sr.TournamentDirector_Email
+  `);
+
+  const recipients = uniqueEmails(result.recordset.map((row) => ({
+    email: text(row.TournamentDirector_Email),
+    name: text(row.TournamentDirector_Name),
+    clubName: text(row.tournhost)
+  })));
+
+  return {
+    season: String(season),
+    recipients,
+    recipientCount: recipients.length,
+    fromOptions: tournamentDirectorEmailFromOptions(),
+    deliveryConfigured: isEmailDeliveryConfigured()
+  };
+}
+
+export async function sendTournamentDirectorEmailBroadcast(filters, body) {
+  const subject = text(body?.subject);
+  const from = NO_REPLY_EMAIL_FROM;
+  const information = text(body?.information);
+  const broadcast = await getTournamentDirectorEmailBroadcast(filters);
+  const recipients = Array.isArray(body?.recipients) && body.recipients.length > 0
+    ? uniqueEmails(body.recipients.map((recipient) => ({
+        email: text(typeof recipient === 'string' ? recipient : recipient?.email),
+        name: text(recipient?.name),
+        clubName: text(recipient?.clubName)
+      })))
+    : broadcast.recipients;
+  const chairs = await getTournamentChairs(await getPool());
+  const errors = [];
+
+  if (!subject) {
+    errors.push('Subject is required.');
+  }
+
+  if (recipients.length === 0) {
+    errors.push('At least one tournament director recipient is required.');
+  }
+
+  if (!information) {
+    errors.push('Email body is required.');
+  }
+
+  if (errors.length > 0) {
+    const error = new Error(errors.join(' '));
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const delivery = await sendRecipientEmails({
+    from,
+    recipients,
+    cc: chairs.map((chair) => chair.email),
+    replyTo: chairs.map((chair) => chair.email),
+    subject,
+    html: appendEmailFooter(information)
+  });
+
+  return {
+    sent: delivery.sent,
+    dryRun: delivery.dryRun,
+    recipientCount: recipients.length,
+    message: delivery.dryRun
+      ? 'Email delivery is not configured. This tournament director broadcast was validated but not sent.'
+      : `Tournament director email sent to ${recipients.length} recipients.`
   };
 }
 
@@ -2420,6 +2639,24 @@ function html(value) {
 
 function text(value) {
   return String(value ?? '').trim();
+}
+
+function formatUsDate(value) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(`${value}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return text(value);
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: '2-digit'
+  }).format(date);
 }
 
 function toDate(value) {

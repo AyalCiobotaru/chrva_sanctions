@@ -29,6 +29,8 @@ import {
   SanctionRequestRenewalResult,
   SanctionRequestFormOptions,
   TournamentSearch,
+  TournamentDirectorEmailBroadcast,
+  TournamentDirectorEmailBroadcastRequest,
   TournamentSummary,
   UpdateTournamentAddedToAesRequest,
   UpdateTournamentAddedToAesResult,
@@ -154,6 +156,26 @@ export class ChrvaApiService {
     return this.http.get<AdminCurrentSanctionRequestsResult>(`${this.baseUrl}/admin/sanction-requests/current`, {
       params: this.toParams(search)
     });
+  }
+
+  getTournamentDirectorEmailBroadcast(
+    search: AdminSanctionRequestSearch
+  ): Observable<TournamentDirectorEmailBroadcast> {
+    return this.http.get<TournamentDirectorEmailBroadcast>(
+      `${this.baseUrl}/admin/sanction-requests/tournament-director-email`,
+      { params: this.toParams(search) }
+    );
+  }
+
+  sendTournamentDirectorEmailBroadcast(
+    search: AdminSanctionRequestSearch,
+    message: TournamentDirectorEmailBroadcastRequest
+  ): Observable<ClubEmailBroadcastResult> {
+    return this.http.post<ClubEmailBroadcastResult>(
+      `${this.baseUrl}/admin/sanction-requests/tournament-director-email`,
+      message,
+      { params: this.toParams(search) }
+    );
   }
 
   updateAdminSanctionRequestReview(

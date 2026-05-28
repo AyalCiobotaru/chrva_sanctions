@@ -25,11 +25,15 @@ p {
 }
 
 button {
+  align-items: center;
   background: #27384c;
   border: 1px solid #27384c;
   border-radius: 4px;
   color: #ffffff;
   cursor: pointer;
+  display: inline-flex;
+  gap: 7px;
+  justify-content: center;
   font: inherit;
   font-weight: 700;
   padding: 9px 12px;
@@ -54,6 +58,21 @@ button:disabled {
   opacity: 0.55;
 }
 
+.loading-spinner {
+  animation: spin 0.8s linear infinite;
+  border: 2px solid rgb(255 255 255 / 45%);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  height: 13px;
+  width: 13px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .filters,
 .email-form {
   background: #ffffff;
@@ -63,6 +82,25 @@ button:disabled {
   gap: 16px;
   margin-bottom: 20px;
   padding: 18px;
+}
+
+.email-alert {
+  border-radius: 4px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+}
+
+.email-alert.error {
+  background: #fff1f1;
+  border: 1px solid #e0a3a3;
+  color: #9b1c1c;
+}
+
+.email-alert.success {
+  background: #edf8f0;
+  border: 1px solid #9dccab;
+  color: #245c37;
 }
 
 .filters {
@@ -102,6 +140,23 @@ textarea {
   border-radius: 4px;
   font: inherit;
   padding: 9px 10px;
+}
+
+.readonly-field {
+  align-items: center;
+  background: #f7f9fc;
+  border: 1px solid #bcc8d6;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #526071;
+  display: flex;
+  font: inherit;
+  height: 39px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 9px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 input[type="checkbox"] {
@@ -207,7 +262,9 @@ small {
 }
 
 .table-actions {
-  white-space: nowrap;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .empty {

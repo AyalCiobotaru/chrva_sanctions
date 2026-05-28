@@ -174,6 +174,7 @@ export interface CreateSanctionRequestResult {
   sanctionId: string;
   status: string;
   submittedDate: string | null;
+  email?: ClubEmailBroadcastResult;
 }
 
 export interface DeleteSanctionRequestResult {
@@ -275,6 +276,21 @@ export interface ClubEmailBroadcastResult {
   dryRun: boolean;
   recipientCount: number;
   message: string;
+}
+
+export interface TournamentDirectorEmailBroadcast {
+  season: string;
+  recipients: ClubEmailRecipient[];
+  recipientCount: number;
+  fromOptions: ClubEmailFromOption[];
+  deliveryConfigured: boolean;
+}
+
+export interface TournamentDirectorEmailBroadcastRequest {
+  from: string;
+  subject: string;
+  information: string;
+  recipients: ClubEmailRecipient[];
 }
 
 export interface CoordinatorSearch {

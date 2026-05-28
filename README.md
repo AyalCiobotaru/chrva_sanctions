@@ -59,9 +59,24 @@ The checked-in `.env.*.example` files document the required variables:
 - `CHRVA_SEASON_STATUS`
 - `CHRVA_SANCTION_STATUS`
 - `CHRVA_AUTH_SECRET`
+- `CHRVA_EMAIL_DRY_RUN`
+- `CHRVA_SMTP_HOST`
+- `CHRVA_SMTP_PORT`
+- `CHRVA_SMTP_SECURE`
+- `CHRVA_SMTP_STARTTLS`
+- `CHRVA_SMTP_USER`
+- `CHRVA_SMTP_PASSWORD`
+- `CHRVA_SMTP_HELO`
 
 On Vercel, add those same names as Project Environment Variables. Do not commit
 real SQL Server credentials.
+
+Email delivery is used by club-director broadcasts, tournament-director
+broadcasts, and sanction request submission confirmations. Outgoing email uses
+`no-reply@chrvajuniors.org` as the sender and appends a non-monitored mailbox
+footer. Keep
+`CHRVA_EMAIL_DRY_RUN=true` in local/test environments unless a real SMTP server
+is intentionally configured.
 
 ## Vercel Deployment
 
