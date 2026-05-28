@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, Observable, take } from 'rxjs';
-import { SanctionVenueOption } from '../../../core/api.models';
+import { CreateSanctionRequestResult, SanctionVenueOption } from '../../../core/api.models';
 import { ChrvaApiService } from '../../../core/chrva-api.service';
 import { getHttpErrorMessage } from '../../../core/http-error';
 import { MultiSelectDropdownComponent, MultiSelectOption } from '../../../util/multi-select-dropdown/multi-select-dropdown.component';
@@ -181,7 +181,8 @@ export class SanctionRequestFormPageComponent implements OnInit {
         this.submitting = false;
       })
     ).subscribe({
-      next: () => {
+      next: (result: unknown) => {
+        this.showEmailResult(result);
         void this.router.navigateByUrl('/sanction-requests/current');
       },
       error: (error: unknown) => {
@@ -269,5 +270,18 @@ export class SanctionRequestFormPageComponent implements OnInit {
   private toNumber(controlName: string): number {
     const value = Number(this.form.get(controlName)?.value);
     return Number.isFinite(value) ? value : 0;
+  }
+
+  private showEmailResult(result: unknown): void {
+    const email = (result as Partial<CreateSanctionRequestResult>)?.email;
+
+    if (!email) {
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      'chrvaEmailStatus',
+      email.message || (email.sent ? 'Confirmation email sent.' : 'Confirmation email was not sent.')
+    );
   }
 }

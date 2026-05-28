@@ -19,9 +19,13 @@ export class CurrentSanctionRequestsPageComponent {
     switchMap(() => this.api.getCurrentSanctionRequests())
   );
   actionError = '';
+  actionStatus = '';
   deletingId = '';
 
-  constructor(private readonly api: ChrvaApiService) {}
+  constructor(private readonly api: ChrvaApiService) {
+    this.actionStatus = window.sessionStorage.getItem('chrvaEmailStatus') ?? '';
+    window.sessionStorage.removeItem('chrvaEmailStatus');
+  }
 
   deleteRequest(requestId: string, requestName: string): void {
     this.actionError = '';

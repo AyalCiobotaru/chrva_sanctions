@@ -1,7 +1,7 @@
 import { AsyncPipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { merge, startWith, Subject, switchMap } from 'rxjs';
+import { finalize, merge, startWith, Subject, switchMap } from 'rxjs';
 import { ClubEmailBroadcast, ClubEmailRecipient, ClubSearch, ClubSummary, NewClubRequest } from '../../core/api.models';
 import { ChrvaApiService } from '../../core/chrva-api.service';
 import { getHttpErrorMessage } from '../../core/http-error';
@@ -17,8 +17,6 @@ import { RichTextEditorComponent } from '../../util/rich-text-editor/rich-text-e
   styleUrl: './clubs-page.component.scss'
 })
 export class ClubsPageComponent {
-  private readonly defaultEmailSender = 'lauren.leventry@chrvajuniors.org';
-
   showAddClub = false;
   showEmailBroadcast = false;
   editingClub: ClubSummary | null = null;
@@ -26,6 +24,7 @@ export class ClubsPageComponent {
   emailBroadcast?: ClubEmailBroadcast;
   emailError = '';
   emailStatus = '';
+  sendingEmail = false;
 
   readonly form = this.fb.nonNullable.group({
     activeStatus: 'active' as 'active' | 'inactive' | 'all',
@@ -50,6 +49,7 @@ export class ClubsPageComponent {
 
   constructor(
     private readonly api: ChrvaApiService,
+    private readonly changeDetector: ChangeDetectorRef,
     private readonly fb: FormBuilder
   ) {}
 
@@ -84,6 +84,9 @@ export class ClubsPageComponent {
 
     if (this.showEmailBroadcast) {
       this.loadEmailBroadcast();
+    } else {
+      this.emailBroadcast = undefined;
+      this.changeDetector.detectChanges();
     }
   }
 
@@ -93,13 +96,50 @@ export class ClubsPageComponent {
     this.api.getClubEmailBroadcast(this.emailForm.controls.clubType.value).subscribe({
       next: (broadcast) => {
         this.emailBroadcast = broadcast;
-        if (!this.emailForm.controls.from.value && broadcast.fromOptions.length > 0) {
-          const defaultSender = broadcast.fromOptions.find((sender) => sender.email === this.defaultEmailSender);
-          this.emailForm.controls.from.setValue((defaultSender ?? broadcast.fromOptions[0]).email);
-        }
+        this.selectEmailSender(broadcast);
+        this.changeDetector.detectChanges();
       },
       error: (error) => {
         this.emailError = getHttpErrorMessage(error, 'Unable to load club director email list.');
+      }
+    });
+  }
+
+  addDirectorToEmail(club: ClubSummary): void {
+    const recipient = this.toDirectorRecipient(club);
+
+    if (!recipient) {
+      this.emailStatus = '';
+      this.emailError = `No valid director email is available for ${club.clubName}.`;
+      this.showEmailBroadcast = true;
+      this.changeDetector.detectChanges();
+      return;
+    }
+
+    this.showEmailBroadcast = true;
+    this.emailError = '';
+    this.emailStatus = '';
+    this.changeDetector.detectChanges();
+
+    if (this.showEmailBroadcast && this.emailBroadcast) {
+      this.addEmailRecipient(recipient);
+      return;
+    }
+
+    this.api.getClubEmailBroadcast(this.emailForm.controls.clubType.value).subscribe({
+      next: (broadcast) => {
+        this.emailBroadcast = {
+          ...broadcast,
+          recipients: [],
+          recipientCount: 0
+        };
+        this.selectEmailSender(broadcast);
+        this.addEmailRecipient(recipient);
+        this.changeDetector.detectChanges();
+      },
+      error: (error) => {
+        this.emailError = getHttpErrorMessage(error, 'Unable to load email composer.');
+        this.changeDetector.detectChanges();
       }
     });
   }
@@ -115,6 +155,38 @@ export class ClubsPageComponent {
       recipients,
       recipientCount: recipients.length
     };
+    this.changeDetector.detectChanges();
+  }
+
+  removeAllEmailRecipients(): void {
+    if (!this.emailBroadcast) {
+      return;
+    }
+
+    this.emailBroadcast = {
+      ...this.emailBroadcast,
+      recipients: [],
+      recipientCount: 0
+    };
+    this.changeDetector.detectChanges();
+  }
+
+  addAllEmailRecipients(): void {
+    this.emailError = '';
+    this.emailStatus = '';
+    this.showEmailBroadcast = true;
+
+    this.api.getClubEmailBroadcast(this.emailForm.controls.clubType.value).subscribe({
+      next: (broadcast) => {
+        this.emailBroadcast = broadcast;
+        this.selectEmailSender(broadcast);
+        this.changeDetector.detectChanges();
+      },
+      error: (error) => {
+        this.emailError = getHttpErrorMessage(error, 'Unable to load club director email list.');
+        this.changeDetector.detectChanges();
+      }
+    });
   }
 
   sendEmailBroadcast(): void {
@@ -125,6 +197,8 @@ export class ClubsPageComponent {
 
     this.emailError = '';
     this.emailStatus = '';
+    this.sendingEmail = true;
+    this.changeDetector.detectChanges();
     const raw = this.emailForm.getRawValue();
 
     this.api.sendClubEmailBroadcast({
@@ -132,12 +206,23 @@ export class ClubsPageComponent {
       subject: raw.subject,
       information: raw.information,
       recipients: this.emailBroadcast.recipients
-    }).subscribe({
+    }).pipe(
+      finalize(() => {
+        this.sendingEmail = false;
+        this.changeDetector.detectChanges();
+      })
+    ).subscribe({
       next: (result) => {
         this.emailStatus = result.message;
+        this.showEmailBroadcast = false;
+        this.emailBroadcast = undefined;
+        this.changeDetector.detectChanges();
       },
       error: (error) => {
         this.emailError = getHttpErrorMessage(error, 'Unable to send club director email.');
+        this.showEmailBroadcast = false;
+        this.emailBroadcast = undefined;
+        this.changeDetector.detectChanges();
       }
     });
   }
@@ -166,6 +251,54 @@ export class ClubsPageComponent {
       clubName: raw.clubName,
       state: raw.state,
       meetingNoShows: raw.meetingNoShows ? 'true' : ''
+    };
+  }
+
+  private addEmailRecipient(recipient: ClubEmailRecipient): void {
+    if (!this.emailBroadcast) {
+      return;
+    }
+
+    const exists = this.emailBroadcast.recipients.some((current) => {
+      return current.email.toLowerCase() === recipient.email.toLowerCase();
+    });
+
+    if (exists) {
+      this.emailStatus = '';
+      this.emailError = `${recipient.email} is already in the email list.`;
+      this.changeDetector.detectChanges();
+      return;
+    }
+
+    const recipients = [...this.emailBroadcast.recipients, recipient];
+    this.emailBroadcast = {
+      ...this.emailBroadcast,
+      recipients,
+      recipientCount: recipients.length
+    };
+    this.changeDetector.detectChanges();
+  }
+
+  private selectEmailSender(broadcast: ClubEmailBroadcast): void {
+    if (broadcast.fromOptions.length === 0) {
+      this.emailForm.controls.from.setValue('');
+      return;
+    }
+
+    this.emailForm.controls.from.setValue(broadcast.fromOptions[0].email);
+  }
+
+  private toDirectorRecipient(club: ClubSummary): ClubEmailRecipient | null {
+    const email = club.email.trim();
+
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      return null;
+    }
+
+    return {
+      email,
+      name: `${club.contactFirstName} ${club.contactLastName}`.trim(),
+      clubName: club.clubName
     };
   }
 }

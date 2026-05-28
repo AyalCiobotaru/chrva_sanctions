@@ -1,7 +1,7 @@
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map, merge, startWith, Subject, switchMap, tap } from 'rxjs';
+import { finalize, map, merge, startWith, Subject, switchMap, tap } from 'rxjs';
 import {
   AdminCurrentSanctionRequestsResult,
   AdminSanctionRequestSearch,
@@ -87,6 +87,7 @@ export class AdminCurrentSanctionRequestsPageComponent {
 
   constructor(
     private readonly api: ChrvaApiService,
+    private readonly changeDetector: ChangeDetectorRef,
     private readonly fb: FormBuilder
   ) {}
 
@@ -136,7 +137,7 @@ export class AdminCurrentSanctionRequestsPageComponent {
     this.api.getTournamentDirectorEmailBroadcast(this.toSearch(this.form.getRawValue())).subscribe({
       next: (broadcast) => {
         this.emailBroadcast = broadcast;
-        if (!this.emailForm.controls.from.value && broadcast.fromOptions.length > 0) {
+        if (broadcast.fromOptions.length > 0) {
           this.emailForm.controls.from.setValue(broadcast.fromOptions[0].email);
         }
       },
@@ -178,6 +179,7 @@ export class AdminCurrentSanctionRequestsPageComponent {
     this.sendingEmail = true;
     this.emailError = '';
     this.emailStatus = '';
+    this.changeDetector.detectChanges();
     const raw = this.emailForm.getRawValue();
 
     this.api.sendTournamentDirectorEmailBroadcast(this.toSearch(this.form.getRawValue()), {
@@ -185,14 +187,21 @@ export class AdminCurrentSanctionRequestsPageComponent {
       subject: raw.subject,
       information: raw.information,
       recipients: this.emailBroadcast.recipients
-    }).subscribe({
-      next: (result) => {
+    }).pipe(
+      finalize(() => {
         this.sendingEmail = false;
+        this.changeDetector.detectChanges();
+      })
+    ).subscribe({
+      next: (result) => {
         this.emailStatus = result.message;
+        this.emailBroadcast = null;
+        this.changeDetector.detectChanges();
       },
       error: (error) => {
-        this.sendingEmail = false;
         this.emailError = getHttpErrorMessage(error, 'Unable to send tournament director email.');
+        this.emailBroadcast = null;
+        this.changeDetector.detectChanges();
       }
     });
   }

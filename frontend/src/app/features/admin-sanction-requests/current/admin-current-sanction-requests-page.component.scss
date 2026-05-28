@@ -137,6 +137,26 @@ textarea {
   width: 100%;
 }
 
+.readonly-field {
+  align-items: center;
+  background: #f7f9fc;
+  border: 1px solid #bcc8d6;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #526071;
+  display: flex;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  height: 50px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
 textarea {
   height: auto;
   min-height: 92px;
@@ -208,11 +228,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .review-actions button,
 .row-actions button {
+  align-items: center;
   background: #25384e;
   border: 1px solid #25384e;
   border-radius: 4px;
   color: #ffffff;
   cursor: pointer;
+  display: inline-flex;
+  gap: 7px;
+  justify-content: center;
   font-weight: 700;
   padding: 8px 10px;
 }
@@ -225,6 +249,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .row-actions {
   flex-wrap: wrap;
+}
+
+.loading-spinner {
+  animation: spin 0.8s linear infinite;
+  border: 2px solid rgb(255 255 255 / 45%);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  height: 13px;
+  width: 13px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
@@ -241,6 +280,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border: 1px solid #adc8e8;
   border-radius: 4px;
   color: #284766;
+  font-weight: 700;
+  padding: 10px 12px;
+}
+
+.email-alert {
+  margin: 0 0 18px;
+}
+
+.success-message {
+  background: #edf8f0;
+  border: 1px solid #9dccab;
+  border-radius: 4px;
+  color: #245c37;
   font-weight: 700;
   padding: 10px 12px;
 }

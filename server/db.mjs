@@ -1,6 +1,8 @@
 import sql from 'mssql';
 import { isEmailDeliveryConfigured, sendEmail } from './mail.mjs';
 
+const NO_REPLY_EMAIL_FROM = 'no-reply@chrvajuniors.org';
+
 let poolPromise;
 
 export function getAppConfig() {
@@ -1002,7 +1004,7 @@ export async function getClubEmailBroadcast(filters = new URLSearchParams()) {
 
 export async function sendClubEmailBroadcast(body) {
   const subject = text(body?.subject);
-  const from = text(body?.from);
+  const from = NO_REPLY_EMAIL_FROM;
   const information = text(body?.information);
   const recipients = Array.isArray(body?.recipients)
     ? uniqueEmails(body.recipients.map((recipient) => ({
@@ -1012,10 +1014,6 @@ export async function sendClubEmailBroadcast(body) {
       })))
     : [];
   const errors = [];
-
-  if (!from) {
-    errors.push('From address is required.');
-  }
 
   if (!subject) {
     errors.push('Subject is required.');
@@ -1040,8 +1038,7 @@ export async function sendClubEmailBroadcast(body) {
     from,
     recipients,
     subject,
-    html: information,
-    replyTo: from
+    html: appendEmailFooter(information)
   });
 
   return {
@@ -1152,25 +1149,27 @@ function uniqueEmails(candidates) {
 
 function clubEmailFromOptions() {
   return [
-    { email: 'peggy.vanlowe@chrvajuniors.org', name: 'Peggy Van Lowe' },
-    { email: 'scott.vanlowe@chrvajuniors.org', name: 'Scott Van Lowe' },
-    { email: 'chris.cant@chrvajuniors.org', name: 'Chris Cant' },
-    { email: 'noel.okoye@chrvajuniors.org', name: 'Noel Okoye' },
-    { email: 'corby.lawrence@chrvajuniors.org', name: 'Corby Lawrence' },
-    { email: 'dado.singer@chrvajuniors.org', name: 'Dado Singer' },
-    { email: 'lauren.leventry@chrvajuniors.org', name: 'Lauren Leventry' },
-    { email: 'laura.kuckuda@chrvajuniors.org', name: 'Laura Kuckuda' },
-    { email: 'lisa.digiacinto@chrvajuniors.org', name: 'Lisa Digiacinto' }
+    { email: NO_REPLY_EMAIL_FROM, name: 'CHRVA Juniors' }
   ];
 }
 
 function tournamentDirectorEmailFromOptions() {
   return [
-    { email: 'dado.singer@chrvajuniors.org', name: 'Dado Singer' },
-    { email: 'lisa.digiacinto@chrvajuniors.org', name: 'Lisa Digiacinto' },
-    { email: 'lauren.leventry@chrvajuniors.org', name: 'Lauren Leventry' },
-    { email: 'jackie.krampf@chrvajuniors.org', name: 'Jackie Krampf' }
+    { email: NO_REPLY_EMAIL_FROM, name: 'CHRVA Juniors' }
   ];
+}
+
+function appendEmailFooter(htmlBody) {
+  return `
+    ${htmlBody}
+    <hr>
+    <p>
+      Please do not reply to this email address because it is not monitored.
+      Instead, email Program Director Lauren Leventry at
+      <a href="mailto:lauren.leventry@chrvavb.org">lauren.leventry@chrvavb.org</a>
+      or contact your respective age group coordinator.
+    </p>
+  `;
 }
 
 async function sendSanctionRequestCreatedEmail(pool, club, request, created) {
@@ -1178,7 +1177,7 @@ async function sendSanctionRequestCreatedEmail(pool, club, request, created) {
   const to = [{ email: request.tournamentDirectorEmail, name: request.tournamentDirectorName }];
   const subject = `Tournament Sanction Request: ${club.clubCode} ${formatUsDate(request.date)} - ${request.division} - ${request.type}`;
   const chairName = chairs.map((chair) => chair.name).filter(Boolean).join(', ') || 'Junior Tournament Chair';
-  const from = process.env.CHRVA_SANCTION_EMAIL_FROM || 'lauren.leventry@chrvajuniors.org';
+  const from = NO_REPLY_EMAIL_FROM;
   const htmlBody = `
     <p>Your tournament request has been submitted.</p>
     <p>Tournament Request Reference Number: ${html(created.id)} / If approved, Sanction Number: ${html(created.sanctionid)}</p>
@@ -1212,7 +1211,7 @@ async function sendSanctionRequestCreatedEmail(pool, club, request, created) {
     cc: chairs.map((chair) => chair.email),
     replyTo: chairs.map((chair) => chair.email),
     subject,
-    html: htmlBody
+    html: appendEmailFooter(htmlBody)
   });
 }
 
@@ -1495,7 +1494,7 @@ export async function getTournamentDirectorEmailBroadcast(filters) {
 
 export async function sendTournamentDirectorEmailBroadcast(filters, body) {
   const subject = text(body?.subject);
-  const from = text(body?.from);
+  const from = NO_REPLY_EMAIL_FROM;
   const information = text(body?.information);
   const broadcast = await getTournamentDirectorEmailBroadcast(filters);
   const recipients = Array.isArray(body?.recipients) && body.recipients.length > 0
@@ -1507,10 +1506,6 @@ export async function sendTournamentDirectorEmailBroadcast(filters, body) {
     : broadcast.recipients;
   const chairs = await getTournamentChairs(await getPool());
   const errors = [];
-
-  if (!from) {
-    errors.push('From address is required.');
-  }
 
   if (!subject) {
     errors.push('Subject is required.');
@@ -1537,7 +1532,7 @@ export async function sendTournamentDirectorEmailBroadcast(filters, body) {
     cc: chairs.map((chair) => chair.email),
     replyTo: chairs.map((chair) => chair.email),
     subject,
-    html: information
+    html: appendEmailFooter(information)
   });
 
   return {

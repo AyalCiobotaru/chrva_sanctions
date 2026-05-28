@@ -28,15 +28,16 @@
   </app-modal>
 }
 
+@if (emailError) {
+  <p class="email-alert error" role="alert">{{ emailError }}</p>
+}
+@if (emailStatus) {
+  <p class="email-alert success" role="status">{{ emailStatus }}</p>
+}
+
 @if (showEmailBroadcast) {
   <form [formGroup]="emailForm" class="email-form" (ngSubmit)="sendEmailBroadcast()">
     <h2>Email Broadcast</h2>
-    @if (emailError) {
-      <p class="error">{{ emailError }}</p>
-    }
-    @if (emailStatus) {
-      <p class="notice">{{ emailStatus }}</p>
-    }
     <label>
       Club Type
       <select formControlName="clubType" (change)="loadEmailBroadcast()">
@@ -48,14 +49,7 @@
     </label>
     <label>
       From
-      <select formControlName="from">
-        <option value="">Select from address</option>
-        @for (sender of emailBroadcast?.fromOptions; track sender) {
-          <option [value]="sender.email">
-            {{ sender.name }} &lt;{{ sender.email }}&gt;
-          </option>
-        }
-      </select>
+      <span class="readonly-field">{{ emailForm.controls.from.value }}</span>
     </label>
     <label>
       Subject
@@ -83,8 +77,29 @@
       </div>
     }
     <div class="form-actions">
-      <button type="submit" [disabled]="emailForm.invalid || !emailBroadcast?.recipientCount">Send</button>
-      <button type="button" class="secondary" (click)="showEmailBroadcast = false">Cancel</button>
+      <button type="submit" [disabled]="emailForm.invalid || !emailBroadcast?.recipientCount || sendingEmail">
+        @if (sendingEmail) {
+          <span class="loading-spinner" aria-hidden="true"></span>
+        }
+        <span>{{ sendingEmail ? 'Sending...' : 'Send' }}</span>
+      </button>
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="sendingEmail || !emailBroadcast?.recipientCount"
+        (click)="removeAllEmailRecipients()"
+      >
+        Remove All Recipients
+      </button>
+      <button
+        type="button"
+        class="secondary"
+        [disabled]="sendingEmail"
+        (click)="addAllEmailRecipients()"
+      >
+        Add All Recipients
+      </button>
+      <button type="button" class="secondary" [disabled]="sendingEmail" (click)="showEmailBroadcast = false">Cancel</button>
     </div>
   </form>
 }
@@ -178,6 +193,7 @@
             }
           </td>
           <td class="table-actions">
+            <button type="button" class="secondary compact" (click)="addDirectorToEmail(club)">Email</button>
             <button type="button" class="secondary compact" (click)="editClub(club)">Edit</button>
           </td>
         </tr>
