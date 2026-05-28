@@ -11,6 +11,7 @@ import { CurrentSanctionRequestsPageComponent } from './features/sanction-reques
 import { SanctionHistoryPageComponent } from './features/sanction-requests/history/sanction-history-page.component';
 import { SanctionRequestFormPageComponent } from './features/sanction-requests/form/sanction-request-form-page.component';
 import { SanctionRequestLoginPageComponent } from './features/sanction-requests/login/sanction-request-login-page.component';
+import { SanctionRequestPrintPageComponent } from './features/sanction-requests/print/sanction-request-print-page.component';
 import { TournamentsPageComponent } from './features/tournaments/tournaments-page.component';
 
 export const routes: Routes = [
@@ -35,6 +36,18 @@ export const routes: Routes = [
     component: SanctionRequestFormPageComponent,
     canActivate: [sanctionClubGuard],
     title: 'Sanction Form'
+  },
+  {
+    path: 'sanction-requests/:id/edit',
+    component: SanctionRequestFormPageComponent,
+    canActivate: [sanctionClubGuard],
+    title: 'Edit Sanction Request'
+  },
+  {
+    path: 'sanction-requests/:id/print',
+    component: SanctionRequestPrintPageComponent,
+    canActivate: [sanctionClubGuard],
+    title: 'Print Sanction Request'
   },
   { path: 'clubs', component: ClubsPageComponent, canActivate: [authGuard], title: 'Club Contacts' },
   { path: 'coordinators', component: CoordinatorsPageComponent, canActivate: [authGuard], title: 'Regional Junior Contacts' },

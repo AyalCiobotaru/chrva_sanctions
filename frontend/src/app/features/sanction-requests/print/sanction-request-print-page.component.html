@@ -1,0 +1,142 @@
+@if (error) {
+  <main class="print-shell">
+    <p class="error" role="alert">{{ error }}</p>
+    <a routerLink="/sanction-requests/current">Back to current requests</a>
+  </main>
+} @else if (request; as detail) {
+  <main class="print-shell">
+    <div class="print-actions">
+      <button type="button" (click)="print()">Print</button>
+      <a routerLink="/sanction-requests/current">Back</a>
+    </div>
+
+    <section class="print-card">
+      <header>
+        <h1>Chesapeake Region Volleyball Association</h1>
+        <h2>Junior Girls Tournament Sanction Request</h2>
+      </header>
+
+      <table>
+        <tbody>
+          <tr>
+            <th>Tournament Name</th>
+            <td colspan="2">{{ detail.request.tournamentName }}</td>
+            <th>Date</th>
+            <td>{{ detail.request.date | date: 'MM/dd/yy' }}</td>
+          </tr>
+          <tr>
+            <th>Site</th>
+            <td colspan="4">{{ detail.request.site }}</td>
+          </tr>
+          <tr>
+            <th>Address</th>
+            <td colspan="4">{{ detail.request.siteAddress }}</td>
+          </tr>
+          <tr>
+            <th>Contact Name</th>
+            <td colspan="4">{{ detail.request.tournamentContactName }}</td>
+          </tr>
+          <tr>
+            <th>Host Club</th>
+            <td colspan="4">{{ detail.club.clubName }} ({{ detail.club.clubCode }})</td>
+          </tr>
+          <tr>
+            <th>Packet Address</th>
+            <td colspan="4">{{ detail.request.tournamentContactAddress }}</td>
+          </tr>
+          <tr>
+            <th>Tournament Director</th>
+            <td>{{ detail.request.tournamentDirectorName }}</td>
+            <th>Email</th>
+            <td colspan="2">{{ detail.request.tournamentDirectorEmail }}</td>
+          </tr>
+          <tr>
+            <th>Phone</th>
+            <td>{{ detail.request.tournamentDirectorHomePhone }}</td>
+            <th>Cell / Website</th>
+            <td colspan="2">{{ detail.request.tournamentDirectorTournamentPhone }}</td>
+          </tr>
+          <tr>
+            <th>Tournament Fee</th>
+            <td>{{ detail.request.entryFee | currency }}</td>
+            <th>Make Check Payable To</th>
+            <td colspan="2">{{ detail.request.checkPayableTo }}</td>
+          </tr>
+          <tr>
+            <th>Age Group</th>
+            <td>{{ detail.request.division }}</td>
+            <th>Number of Teams</th>
+            <td colspan="2">{{ detail.request.numberOfTeams }}</td>
+          </tr>
+          <tr>
+            <th>Type</th>
+            <td>{{ detail.request.type }}</td>
+            <th>Single Age Group Open</th>
+            <td colspan="2">{{ detail.request.singleAgeGroupOpen }}</td>
+          </tr>
+          <tr>
+            <th>Pool Play</th>
+            <td>{{ detail.request.poolPlay }}</td>
+            <th>Qtr Finals</th>
+            <td colspan="2">{{ detail.request.quarterFinals }}</td>
+          </tr>
+          <tr>
+            <th>Semi Finals</th>
+            <td>{{ detail.request.semiFinals }}</td>
+            <th>Finals</th>
+            <td colspan="2">{{ detail.request.finals }}</td>
+          </tr>
+          <tr>
+            <th>Showers</th>
+            <td>{{ detail.request.showers }}</td>
+            <th>Awards</th>
+            <td colspan="2">{{ detail.request.awards }}</td>
+          </tr>
+          <tr>
+            <th>Food</th>
+            <td>{{ detail.request.food }}</td>
+            <th>Lockers</th>
+            <td colspan="2">{{ detail.request.lockerRoom }}</td>
+          </tr>
+          <tr>
+            <th>Additional Information</th>
+            <td colspan="4">{{ detail.request.information }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Income / Expense Worksheet</h2>
+      <table>
+        <tbody>
+          <tr>
+            <th colspan="3">Tournament Expenses</th>
+            <th colspan="2">Estimated</th>
+          </tr>
+          <tr><td colspan="3">Facility charges</td><td colspan="2">{{ detail.request.expenseFacility | currency }}</td></tr>
+          <tr><td colspan="3">Sanction fee ($7.00 per team)</td><td colspan="2">{{ (+detail.request.numberOfTeams || 0) * 7 | currency }}</td></tr>
+          <tr><td colspan="3">Officials fees</td><td colspan="2">{{ detail.request.expenseOfficialsFees | currency }}</td></tr>
+          <tr><td colspan="3">New volleyballs</td><td colspan="2">{{ detail.request.expenseVolleyballs | currency }}</td></tr>
+          <tr><td colspan="3">Awards</td><td colspan="2">{{ detail.request.expenseAwards | currency }}</td></tr>
+          <tr><td colspan="3">Score/lineup sheets, pens, etc.</td><td colspan="2">{{ detail.request.expenseSupplies | currency }}</td></tr>
+          <tr><td colspan="3">Other expenses</td><td colspan="2">{{ detail.request.expenseOther | currency }}</td></tr>
+          <tr>
+            <th colspan="3">Submitted By</th>
+            <td colspan="2">{{ detail.request.requester }}</td>
+          </tr>
+          <tr>
+            <th colspan="3">Date Submitted</th>
+            <td colspan="2">{{ detail.submitDate | date: 'MM/dd/yyyy' }}</td>
+          </tr>
+          <tr>
+            <th colspan="3">Sanction Status</th>
+            <td colspan="2">{{ detail.sanctionStatus }}</td>
+          </tr>
+          <tr>
+            <th colspan="3">Sanction Number</th>
+            <td colspan="2">{{ detail.sanctionId }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+}
