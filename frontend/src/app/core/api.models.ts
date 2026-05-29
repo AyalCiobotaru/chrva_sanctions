@@ -185,6 +185,7 @@ export interface DeleteSanctionRequestResult {
 export interface ClubSearch {
   clubName?: string;
   state?: string;
+  clubType?: string;
   activeStatus?: 'active' | 'inactive' | 'all';
   meetingNoShows?: string;
 }
@@ -344,7 +345,7 @@ export interface DeleteCoordinatorResult {
 
 export interface TournamentSearch {
   season?: string;
-  program: 'jr' | 'boys' | 'adt';
+  program?: '' | 'jr' | 'boys' | 'adt';
   division?: string;
   host?: string;
   name?: string;

@@ -4,21 +4,33 @@
     <p>Review submitted tournament sanction requests by season, club, week, status, and division.</p>
   </div>
   <div class="actions">
-    <button type="button" (click)="openTournamentDirectorEmail()">Email to Directors</button>
+    <button
+      type="button"
+      title="Adds only recipients that match the current request filters."
+      (click)="openTournamentDirectorEmail()"
+    >
+      Email to Requesters
+    </button>
   </div>
 </section>
 
 @if (emailError) {
-  <p class="email-alert error-message" role="alert">{{ emailError }}</p>
+  <div class="email-toast error-message" role="alert">
+    <span>{{ emailError }}</span>
+    <button type="button" aria-label="Dismiss email message" (click)="dismissEmailToast()">×</button>
+  </div>
 }
 @if (emailStatus) {
-  <p class="email-alert success-message" role="status">{{ emailStatus }}</p>
+  <div class="email-toast success-message" role="status">
+    <span>{{ emailStatus }}</span>
+    <button type="button" aria-label="Dismiss email message" (click)="dismissEmailToast()">×</button>
+  </div>
 }
 
 @if (emailBroadcast) {
   <app-modal (closed)="closeTournamentDirectorEmail()">
     <form [formGroup]="emailForm" class="email-form" (ngSubmit)="sendTournamentDirectorEmail()">
-      <h2>Email to Directors</h2>
+      <h2>Email to Requesters</h2>
       <p>
         Season {{ emailBroadcast.season }} · {{ emailBroadcast.recipientCount }} recipients from the current request filters.
       </p>

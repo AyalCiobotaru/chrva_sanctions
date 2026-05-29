@@ -182,7 +182,7 @@ export async function sendTournamentDirectorEmailBroadcast(filters, body) {
     recipientCount: recipients.length,
     message: delivery.dryRun
       ? 'Email delivery is not configured. This tournament director broadcast was validated but not sent.'
-      : `Tournament director email sent to ${recipients.length} recipients.`
+      : `Requestor email sent to ${recipients.length} recipient${recipients.length > 1 ? 's':''}.`
   };
 }
 

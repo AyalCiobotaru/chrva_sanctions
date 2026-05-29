@@ -41,8 +41,9 @@ export async function searchTournaments(filters) {
       where.push("substring(sr.division, 1, 1) = 'B'");
       break;
     case 'jr':
-    default:
       where.push("substring(sr.division, 1, 1) = 'G'");
+      break;
+    default:
       break;
   }
 

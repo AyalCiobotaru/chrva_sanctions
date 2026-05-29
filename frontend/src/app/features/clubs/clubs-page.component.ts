@@ -28,6 +28,7 @@ export class ClubsPageComponent {
 
   readonly form = this.fb.nonNullable.group({
     activeStatus: 'active' as 'active' | 'inactive' | 'all',
+    clubType: '',
     clubName: '',
     state: '',
     meetingNoShows: false
@@ -248,6 +249,7 @@ export class ClubsPageComponent {
     const raw = this.form.getRawValue();
     return {
       activeStatus: raw.activeStatus,
+      clubType: raw.clubType,
       clubName: raw.clubName,
       state: raw.state,
       meetingNoShows: raw.meetingNoShows ? 'true' : ''

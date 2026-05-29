@@ -1,5 +1,5 @@
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnDestroy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, map, merge, startWith, Subject, switchMap, tap } from 'rxjs';
 import {
@@ -30,8 +30,9 @@ interface AdminSanctionRequestWeekGroup {
   templateUrl: './admin-current-sanction-requests-page.component.html',
   styleUrl: './admin-current-sanction-requests-page.component.scss'
 })
-export class AdminCurrentSanctionRequestsPageComponent {
+export class AdminCurrentSanctionRequestsPageComponent implements OnDestroy {
   private readonly firstLegacySeason = 2016;
+  private emailToastTimeout: ReturnType<typeof setTimeout> | null = null;
 
   readonly form = this.fb.nonNullable.group({
     season: '2026',
@@ -88,8 +89,13 @@ export class AdminCurrentSanctionRequestsPageComponent {
   constructor(
     private readonly api: ChrvaApiService,
     private readonly changeDetector: ChangeDetectorRef,
-    private readonly fb: FormBuilder
+    private readonly fb: FormBuilder,
+    private readonly zone: NgZone
   ) {}
+
+  ngOnDestroy(): void {
+    this.clearEmailToastTimer();
+  }
 
   setStatus(status: string): void {
     this.form.patchValue({
@@ -132,17 +138,23 @@ export class AdminCurrentSanctionRequestsPageComponent {
   }
 
   openTournamentDirectorEmail(): void {
-    this.emailError = '';
-    this.emailStatus = '';
+    this.dismissEmailToast();
     this.api.getTournamentDirectorEmailBroadcast(this.toSearch(this.form.getRawValue())).subscribe({
       next: (broadcast) => {
-        this.emailBroadcast = broadcast;
-        if (broadcast.fromOptions.length > 0) {
-          this.emailForm.controls.from.setValue(broadcast.fromOptions[0].email);
-        }
+        this.zone.run(() => {
+          this.emailBroadcast = broadcast;
+          if (broadcast.fromOptions.length > 0) {
+            this.emailForm.controls.from.setValue(broadcast.fromOptions[0].email);
+          }
+          this.changeDetector.detectChanges();
+        });
       },
       error: (error) => {
-        this.emailError = getHttpErrorMessage(error, 'Unable to load tournament director email list.');
+        this.zone.run(() => {
+          this.emailError = getHttpErrorMessage(error, 'Unable to load tournament director email list.');
+          this.scheduleEmailToastDismiss();
+          this.changeDetector.detectChanges();
+        });
       }
     });
   }
@@ -176,9 +188,8 @@ export class AdminCurrentSanctionRequestsPageComponent {
       return;
     }
 
+    this.dismissEmailToast();
     this.sendingEmail = true;
-    this.emailError = '';
-    this.emailStatus = '';
     this.changeDetector.detectChanges();
     const raw = this.emailForm.getRawValue();
 
@@ -189,21 +200,36 @@ export class AdminCurrentSanctionRequestsPageComponent {
       recipients: this.emailBroadcast.recipients
     }).pipe(
       finalize(() => {
-        this.sendingEmail = false;
-        this.changeDetector.detectChanges();
+        this.zone.run(() => {
+          this.sendingEmail = false;
+          this.changeDetector.detectChanges();
+        });
       })
     ).subscribe({
       next: (result) => {
-        this.emailStatus = result.message;
-        this.emailBroadcast = null;
-        this.changeDetector.detectChanges();
+        this.zone.run(() => {
+          this.emailStatus = result.message || 'Email sent successfully.';
+          this.emailBroadcast = null;
+          this.scheduleEmailToastDismiss();
+          this.changeDetector.detectChanges();
+        });
       },
       error: (error) => {
-        this.emailError = getHttpErrorMessage(error, 'Unable to send tournament director email.');
-        this.emailBroadcast = null;
-        this.changeDetector.detectChanges();
+        this.zone.run(() => {
+          this.emailError = getHttpErrorMessage(error, 'Unable to send tournament director email.');
+          this.emailBroadcast = null;
+          this.scheduleEmailToastDismiss();
+          this.changeDetector.detectChanges();
+        });
       }
     });
+  }
+
+  dismissEmailToast(): void {
+    this.clearEmailToastTimer();
+    this.emailError = '';
+    this.emailStatus = '';
+    this.changeDetector.detectChanges();
   }
 
   openReview(request: AdminSanctionRequestSummary, sanctionStatus = request.sanctionStatus): void {
@@ -267,6 +293,20 @@ export class AdminCurrentSanctionRequestsPageComponent {
       sagoOnly: search.sagoOnly ? 'true' : '',
       duplicateSanctionId: search.duplicateSanctionId
     };
+  }
+
+  private scheduleEmailToastDismiss(): void {
+    this.clearEmailToastTimer();
+    this.emailToastTimeout = setTimeout(() => {
+      this.zone.run(() => this.dismissEmailToast());
+    }, 10000);
+  }
+
+  private clearEmailToastTimer(): void {
+    if (this.emailToastTimeout) {
+      clearTimeout(this.emailToastTimeout);
+      this.emailToastTimeout = null;
+    }
   }
 
   private toDivisionOptions(result: AdminCurrentSanctionRequestsResult): MultiSelectOption[] {

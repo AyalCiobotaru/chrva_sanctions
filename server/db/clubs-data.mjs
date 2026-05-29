@@ -34,6 +34,11 @@ export async function searchClubs(filters) {
     where.push("active = 'N'");
   }
 
+  if (filters.get('clubType')) {
+    request.input('clubType', sql.NVarChar, `%${text(filters.get('clubType')).toUpperCase()}%`);
+    where.push('clubType like @clubType');
+  }
+
   addStartsWith(where, request, 'clubName', 'ClubName', filters.get('clubName'));
   addStartsWith(where, request, 'state', 'st', filters.get('state'));
 
