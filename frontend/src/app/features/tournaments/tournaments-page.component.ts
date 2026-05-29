@@ -25,7 +25,7 @@ export class TournamentsPageComponent {
 
   readonly form = this.fb.nonNullable.group({
     season: '2027',
-    program: 'jr' as const,
+    program: '',
     division: '',
     host: '',
     name: '',
@@ -85,9 +85,13 @@ export class TournamentsPageComponent {
   }
 
   private toSearch(search: typeof this.form.value): TournamentSearch {
+    const program = search.program === 'jr' || search.program === 'boys' || search.program === 'adt'
+      ? search.program
+      : '';
+
     return {
       season: search.season,
-      program: search.program ?? 'jr',
+      program,
       division: search.division,
       host: search.host,
       name: search.name,

@@ -185,6 +185,7 @@ export interface DeleteSanctionRequestResult {
 export interface ClubSearch {
   clubName?: string;
   state?: string;
+  clubType?: string;
   activeStatus?: 'active' | 'inactive' | 'all';
   meetingNoShows?: string;
 }
@@ -301,10 +302,33 @@ export interface CoordinatorSearch {
 
 export interface CoordinatorSummary {
   category: string;
+  level: string;
   grouping: string;
   firstName: string;
   lastName: string;
+  address1: string;
+  address2: string;
   address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phonePrimary: string;
+  phoneSecondary: string;
+  extension: string;
+  fax: string;
+  email: string;
+  displayRecord: string;
+  type: string;
+}
+
+export interface CoordinatorRequest {
+  category: string;
+  level: string;
+  grouping: string;
+  firstName: string;
+  lastName: string;
+  address1: string;
+  address2: string;
   city: string;
   state: string;
   zip: string;
@@ -315,9 +339,13 @@ export interface CoordinatorSummary {
   email: string;
 }
 
+export interface DeleteCoordinatorResult {
+  deleted: boolean;
+}
+
 export interface TournamentSearch {
   season?: string;
-  program: 'jr' | 'boys' | 'adt';
+  program?: '' | 'jr' | 'boys' | 'adt';
   division?: string;
   host?: string;
   name?: string;
