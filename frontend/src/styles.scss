@@ -1,3 +1,21 @@
 @import 'quill/dist/quill.snow.css';
 @import 'highlight.js/styles/atom-one-dark.css';
 @import 'katex/dist/katex.min.css';
+
+@media print {
+  body.printing-sanction-request .topbar,
+  body.printing-sanction-request app-error-banner {
+    display: none !important;
+  }
+
+  body.printing-sanction-request main {
+    margin: 0 !important;
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  body.printing-sanction-request .shell {
+    background: #ffffff !important;
+    min-height: auto !important;
+  }
+}

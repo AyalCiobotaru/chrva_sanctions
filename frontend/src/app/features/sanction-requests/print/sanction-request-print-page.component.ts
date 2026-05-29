@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { take } from 'rxjs';
 import { SanctionRequestDetailResult } from '../../../core/api.models';
@@ -13,20 +13,39 @@ import { getHttpErrorMessage } from '../../../core/http-error';
   templateUrl: './sanction-request-print-page.component.html',
   styleUrl: './sanction-request-print-page.component.scss'
 })
-export class SanctionRequestPrintPageComponent implements OnInit {
+export class SanctionRequestPrintPageComponent implements OnInit, OnDestroy {
   request: SanctionRequestDetailResult | null = null;
   error = '';
+  loading = true;
+  printed = false;
+  backLink = '/sanction-requests/current';
+  backLabel = 'Back to current requests';
+  private readonly afterPrint = () => {
+    this.printed = true;
+    this.changeDetector.detectChanges();
+  };
 
   constructor(
     private readonly api: ChrvaApiService,
+    private readonly changeDetector: ChangeDetectorRef,
     private readonly route: ActivatedRoute
   ) {}
 
+  ngOnDestroy(): void {
+    window.removeEventListener('afterprint', this.afterPrint);
+    document.body.classList.remove('printing-sanction-request');
+  }
+
   ngOnInit(): void {
+    window.addEventListener('afterprint', this.afterPrint);
+    document.body.classList.add('printing-sanction-request');
+    this.setBackLink();
+
     this.route.paramMap.pipe(take(1)).subscribe((params) => {
       const requestId = params.get('id');
 
       if (!requestId) {
+        this.loading = false;
         this.error = 'Sanction request was not found.';
         return;
       }
@@ -34,10 +53,13 @@ export class SanctionRequestPrintPageComponent implements OnInit {
       this.api.getSanctionRequest(requestId).subscribe({
         next: (request) => {
           this.request = request;
-          setTimeout(() => window.print());
+          this.loading = false;
+          this.changeDetector.detectChanges();
         },
         error: (error: unknown) => {
+          this.loading = false;
           this.error = getHttpErrorMessage(error, 'Unable to load sanction request.');
+          this.changeDetector.detectChanges();
         }
       });
     });
@@ -45,5 +67,18 @@ export class SanctionRequestPrintPageComponent implements OnInit {
 
   print(): void {
     window.print();
+  }
+
+  private setBackLink(): void {
+    const source = this.route.snapshot.queryParamMap.get('from');
+
+    if (source === 'history') {
+      this.backLink = '/sanction-requests/history';
+      this.backLabel = 'Back to sanction history';
+      return;
+    }
+
+    this.backLink = '/sanction-requests/current';
+    this.backLabel = 'Back to current requests';
   }
 }

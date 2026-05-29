@@ -33,6 +33,10 @@ th {
   font-size: 13px;
 }
 
+.history-table tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
 small {
   color: #637083;
   display: block;

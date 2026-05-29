@@ -44,10 +44,10 @@ export const routes: Routes = [
     title: 'Edit Sanction Request'
   },
   {
-    path: 'sanction-requests/:id/print',
+    path: 'sanction-requests/:id/view',
     component: SanctionRequestPrintPageComponent,
     canActivate: [sanctionClubGuard],
-    title: 'Print Sanction Request'
+    title: 'View Sanction Request'
   },
   { path: 'clubs', component: ClubsPageComponent, canActivate: [authGuard], title: 'Club Contacts' },
   { path: 'coordinators', component: CoordinatorsPageComponent, canActivate: [authGuard], title: 'Regional Junior Contacts' },

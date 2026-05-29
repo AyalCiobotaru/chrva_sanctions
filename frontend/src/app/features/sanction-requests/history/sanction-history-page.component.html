@@ -8,7 +8,7 @@
     </p>
   </section>
 
-  <table>
+  <table class="history-table">
     <thead>
       <tr>
         <th>Week</th>
@@ -16,37 +16,50 @@
         <th>Age</th>
         <th>Type</th>
         <th>Teams</th>
+        <th>HDP</th>
         <th>Location</th>
         <th>Renew {{ history.currentSeason }}</th>
       </tr>
     </thead>
     <tbody>
       @for (tournament of history.tournaments; track tournament.id) {
-        <tr [class.hdp]="tournament.hdp">
+        <tr>
           <td>{{ tournament.weekNumber }}</td>
           <td>{{ tournament.date | date: 'MM/dd/yy' }}</td>
           <td>{{ tournament.division.replace('Girls', '') }}</td>
           <td>{{ tournament.type }}</td>
           <td>{{ tournament.teamCount ?? 'TBD' }}</td>
+          <td>{{ tournament.hdp ? 'Yes' : 'No' }}</td>
           <td>{{ tournament.site }}</td>
           <td>
-            @if (tournament.renewalStatus) {
-              {{ tournament.renewalStatus }}
-            } @else {
+            <div class="actions-cell">
+              @if (!tournament.renewalStatus) {
+                <a
+                  class="request-link"
+                  routerLink="/sanction-requests/new"
+                  [queryParams]="{ renewFrom: tournament.id }"
+                >
+                  Request
+                </a>
+              }
               <a
-                class="request-link"
-                routerLink="/sanction-requests/new"
-                [queryParams]="{ renewFrom: tournament.id }"
+                class="request-link secondary"
+                [routerLink]="['/sanction-requests', tournament.id, 'view']"
+                [queryParams]="{ from: 'history' }"
               >
-                Request
+                View
               </a>
+            </div>
+            @if (tournament.renewalStatus) {
+              <small>{{ tournament.renewalStatus }}</small>
+            } @else {
               <small>{{ tournament.proposedRenewalDate | date: 'MM/dd/yyyy' }}</small>
             }
           </td>
         </tr>
       } @empty {
         <tr>
-          <td colspan="7" class="empty">No sanctioned tournament history was found for the previous season.</td>
+          <td colspan="8" class="empty">No sanctioned tournament history was found for the previous season.</td>
         </tr>
       }
     </tbody>
