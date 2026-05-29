@@ -58,6 +58,21 @@ table {
   width: 100%;
 }
 
+.worksheet-grid {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.worksheet-grid table {
+  margin-bottom: 12px;
+}
+
+.submission-table th {
+  width: 20%;
+}
+
 th,
 td {
   border: 1px solid #c5ceda;
@@ -123,5 +138,9 @@ th {
 
   tr {
     page-break-inside: avoid;
+  }
+
+  .worksheet-grid {
+    gap: 8px;
   }
 }

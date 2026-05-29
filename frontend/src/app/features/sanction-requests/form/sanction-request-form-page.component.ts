@@ -49,8 +49,6 @@ export class SanctionRequestFormPageComponent implements OnInit {
   readonly sanctionFeePerTeam = SANCTION_FEE_PER_TEAM;
   readonly paymentTypeOptions: MultiSelectOption[] = [
     { value: 'Credit Card', label: 'Credit Card' },
-    { value: 'Zelle', label: 'Zelle' },
-    { value: 'Venmo', label: 'Venmo' },
     { value: 'Check', label: 'Check' } 
   ];
 

@@ -75,6 +75,10 @@
             <td colspan="2">{{ detail.request.checkPayableTo }}</td>
           </tr>
           <tr>
+            <th>Payment Types</th>
+            <td colspan="4">{{ detail.request.paymentType.join(', ') }}</td>
+          </tr>
+          <tr>
             <th>Age Group</th>
             <td>{{ detail.request.division }}</td>
             <th>Number of Teams</th>
@@ -124,34 +128,43 @@
       </table>
 
       <h2>Income / Expense Worksheet</h2>
-      <table>
+      <div class="worksheet-grid">
+        <table>
+          <tbody>
+            <tr><th>Expenses</th><th>Estimated</th></tr>
+            <tr><td>Facility charges</td><td>{{ detail.request.expenseFacility | currency }}</td></tr>
+            <tr><td>Sanction fee ({{ sanctionFeePerTeam | currency }} per team)</td><td>{{ (+detail.request.numberOfTeams || 0) * sanctionFeePerTeam | currency }}</td></tr>
+            <tr><td>Officials fees</td><td>{{ detail.request.expenseOfficialsFees | currency }}</td></tr>
+            <tr><td>New volleyballs</td><td>{{ detail.request.expenseVolleyballs | currency }}</td></tr>
+            <tr><td>Awards</td><td>{{ detail.request.expenseAwards | currency }}</td></tr>
+            <tr><td>Score/lineup sheets, pens, etc.</td><td>{{ detail.request.expenseSupplies | currency }}</td></tr>
+            <tr><td>Other expenses</td><td>{{ detail.request.expenseOther | currency }}</td></tr>
+          </tbody>
+        </table>
+
+        <table>
+          <tbody>
+            <tr><th>Income</th><th>Estimated</th></tr>
+            <tr><td>Entry fee income</td><td>{{ (+detail.request.entryFee || 0) * (+detail.request.numberOfTeams || 0) | currency }}</td></tr>
+            <tr><td>Other income</td><td>{{ detail.request.otherIncome | currency }}</td></tr>
+            <tr><th>Net</th><td>{{ detail.request.netIncome | currency }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <table class="submission-table">
         <tbody>
           <tr>
-            <th colspan="3">Tournament Expenses</th>
-            <th colspan="2">Estimated</th>
-          </tr>
-          <tr><td colspan="3">Facility charges</td><td colspan="2">{{ detail.request.expenseFacility | currency }}</td></tr>
-          <tr><td colspan="3">Sanction fee ({{ sanctionFeePerTeam | currency }} per team)</td><td colspan="2">{{ (+detail.request.numberOfTeams || 0) * sanctionFeePerTeam | currency }}</td></tr>
-          <tr><td colspan="3">Officials fees</td><td colspan="2">{{ detail.request.expenseOfficialsFees | currency }}</td></tr>
-          <tr><td colspan="3">New volleyballs</td><td colspan="2">{{ detail.request.expenseVolleyballs | currency }}</td></tr>
-          <tr><td colspan="3">Awards</td><td colspan="2">{{ detail.request.expenseAwards | currency }}</td></tr>
-          <tr><td colspan="3">Score/lineup sheets, pens, etc.</td><td colspan="2">{{ detail.request.expenseSupplies | currency }}</td></tr>
-          <tr><td colspan="3">Other expenses</td><td colspan="2">{{ detail.request.expenseOther | currency }}</td></tr>
-          <tr>
-            <th colspan="3">Submitted By</th>
-            <td colspan="2">{{ detail.request.requester }}</td>
+            <th>Submitted By</th>
+            <td>{{ detail.request.requester }}</td>
+            <th>Date Submitted</th>
+            <td>{{ detail.submitDate | date: 'MM/dd/yyyy' }}</td>
           </tr>
           <tr>
-            <th colspan="3">Date Submitted</th>
-            <td colspan="2">{{ detail.submitDate | date: 'MM/dd/yyyy' }}</td>
-          </tr>
-          <tr>
-            <th colspan="3">Sanction Status</th>
-            <td colspan="2">{{ detail.sanctionStatus }}</td>
-          </tr>
-          <tr>
-            <th colspan="3">Sanction Number</th>
-            <td colspan="2">{{ detail.sanctionId }}</td>
+            <th>Sanction Status</th>
+            <td>{{ detail.sanctionStatus }}</td>
+            <th>Sanction Number</th>
+            <td>{{ detail.sanctionId }}</td>
           </tr>
         </tbody>
       </table>
