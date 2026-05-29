@@ -191,6 +191,10 @@ export class SanctionRequestFormPageComponent implements OnInit {
     });
   }
 
+  cancelEdit(): void {
+    void this.router.navigateByUrl('/sanction-requests/current');
+  }
+
   selectVenue(event: Event, venues: SanctionVenueOption[]): void {
     const select = event.target as HTMLSelectElement;
     const venue = venues[Number(select.value)];

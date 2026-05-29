@@ -171,6 +171,12 @@ button {
   padding: 11px 14px;
 }
 
+button.secondary {
+  background: #ffffff;
+  border: 1px solid #bcc8d6;
+  color: #164f86;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.55;

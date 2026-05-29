@@ -83,12 +83,29 @@ th {
   padding: 10px;
 }
 
+.notice {
+  background: #edf8f0;
+  border: 1px solid #9dccab;
+  border-radius: 4px;
+  color: #245c37;
+  font-weight: 700;
+  margin: 0 auto 14px;
+  max-width: 760px;
+  padding: 10px;
+}
+
 @media print {
+  :host {
+    display: block;
+  }
+
   .print-shell {
     background: #ffffff;
+    min-height: auto;
     padding: 0;
   }
 
+  .notice,
   .print-actions {
     display: none;
   }
@@ -98,5 +115,13 @@ th {
     margin: 0;
     max-width: none;
     padding: 0;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
   }
 }

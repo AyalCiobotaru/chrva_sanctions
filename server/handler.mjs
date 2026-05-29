@@ -122,7 +122,7 @@ export async function handleApiRequest(request, response) {
       });
     }
 
-    const sanctionRequestPath = url.pathname.match(/^\/api\/sanction-requests\/([^/]+)(?:\/(?:edit|print))?\/?$/);
+    const sanctionRequestPath = url.pathname.match(/^\/api\/sanction-requests\/([^/]+)(?:\/(?:edit|view))?\/?$/);
     const sanctionRenewalPath = url.pathname.match(/^\/api\/sanction-requests\/renewal\/([^/]+)\/?$/);
 
     if (route === 'GET /api/sanction-requests/history') {

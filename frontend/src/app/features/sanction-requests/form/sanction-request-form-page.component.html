@@ -310,6 +310,9 @@
           {{ submitting ? 'Submitting...' : editRequestId ? 'Save Request' : 'Submit Request' }}
         </button>
       </span>
+      @if (editRequestId) {
+        <button type="button" class="secondary" [disabled]="submitting" (click)="cancelEdit()">Cancel</button>
+      }
     </div>
   </form>
 }

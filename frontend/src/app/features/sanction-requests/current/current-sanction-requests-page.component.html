@@ -33,7 +33,13 @@
       @for (request of current.requests; track request.id) {
         <tr [class.hdp]="request.hdp">
           <td class="actions-cell">
-            <a class="request-link" [routerLink]="['/sanction-requests', request.id, 'print']">Print</a>
+            <a
+              class="request-link"
+              [routerLink]="['/sanction-requests', request.id, 'view']"
+              [queryParams]="{ from: 'current' }"
+            >
+              View
+            </a>
             @if (request.canModify) {
               <a class="request-link secondary" [routerLink]="['/sanction-requests', request.id, 'edit']">Edit</a>
               <button

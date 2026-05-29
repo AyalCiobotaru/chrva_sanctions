@@ -1,13 +1,21 @@
-@if (error) {
+@if (loading) {
+  <main class="print-shell">
+    <p class="notice" role="status">Loading sanction request...</p>
+  </main>
+} @else if (error) {
   <main class="print-shell">
     <p class="error" role="alert">{{ error }}</p>
-    <a routerLink="/sanction-requests/current">Back to current requests</a>
+    <a [routerLink]="backLink">{{ backLabel }}</a>
   </main>
 } @else if (request; as detail) {
   <main class="print-shell">
+    @if (printed) {
+      <p class="notice" role="status">Print preview closed. You can print again or go back.</p>
+    }
+
     <div class="print-actions">
       <button type="button" (click)="print()">Print</button>
-      <a routerLink="/sanction-requests/current">Back</a>
+      <a [routerLink]="backLink">Back</a>
     </div>
 
     <section class="print-card">
@@ -26,7 +34,9 @@
           </tr>
           <tr>
             <th>Site</th>
-            <td colspan="4">{{ detail.request.site }}</td>
+            <td colspan="2">{{ detail.request.site }}</td>
+            <th>Start Time</th>
+            <td>{{ detail.request.startTime }}</td>
           </tr>
           <tr>
             <th>Address</th>
@@ -34,14 +44,16 @@
           </tr>
           <tr>
             <th>Contact Name</th>
-            <td colspan="4">{{ detail.request.tournamentContactName }}</td>
+            <td>{{ detail.request.tournamentContactName }}</td>
+            <th>Phone</th>
+            <td colspan="2">{{ detail.request.tournamentDirectorHomePhone }}</td>
           </tr>
           <tr>
             <th>Host Club</th>
             <td colspan="4">{{ detail.club.clubName }} ({{ detail.club.clubCode }})</td>
           </tr>
           <tr>
-            <th>Packet Address</th>
+            <th>Contact Address</th>
             <td colspan="4">{{ detail.request.tournamentContactAddress }}</td>
           </tr>
           <tr>
@@ -51,8 +63,8 @@
             <td colspan="2">{{ detail.request.tournamentDirectorEmail }}</td>
           </tr>
           <tr>
-            <th>Phone</th>
-            <td>{{ detail.request.tournamentDirectorHomePhone }}</td>
+            <th>Playoff Format</th>
+            <td>{{ detail.request.playoffFormat }}</td>
             <th>Cell / Website</th>
             <td colspan="2">{{ detail.request.tournamentDirectorTournamentPhone }}</td>
           </tr>
@@ -71,32 +83,38 @@
           <tr>
             <th>Type</th>
             <td>{{ detail.request.type }}</td>
+            <th>Minimum Teams</th>
+            <td colspan="2">{{ detail.request.minimumNumberOfTeams }}</td>
+          </tr>
+          <tr>
             <th>Single Age Group Open</th>
-            <td colspan="2">{{ detail.request.singleAgeGroupOpen }}</td>
-          </tr>
-          <tr>
+            <td>{{ detail.request.singleAgeGroupOpen === 'Y' ? 'Yes' : 'No' }}</td>
             <th>Pool Play</th>
-            <td>{{ detail.request.poolPlay }}</td>
+            <td colspan="2">{{ detail.request.poolPlay }}</td>
+          </tr>
+          <tr>
             <th>Qtr Finals</th>
-            <td colspan="2">{{ detail.request.quarterFinals }}</td>
-          </tr>
-          <tr>
+            <td>{{ detail.request.quarterFinals }}</td>
             <th>Semi Finals</th>
-            <td>{{ detail.request.semiFinals }}</td>
+            <td colspan="2">{{ detail.request.semiFinals }}</td>
+          </tr>
+          <tr>
             <th>Finals</th>
-            <td colspan="2">{{ detail.request.finals }}</td>
-          </tr>
-          <tr>
+            <td>{{ detail.request.finals }}</td>
             <th>Showers</th>
-            <td>{{ detail.request.showers }}</td>
-            <th>Awards</th>
-            <td colspan="2">{{ detail.request.awards }}</td>
+            <td colspan="2">{{ detail.request.showers }}</td>
           </tr>
           <tr>
+            <th>Awards</th>
+            <td>{{ detail.request.awards }}</td>
             <th>Food</th>
-            <td>{{ detail.request.food }}</td>
+            <td colspan="2">{{ detail.request.food }}</td>
+          </tr>
+          <tr>
             <th>Lockers</th>
-            <td colspan="2">{{ detail.request.lockerRoom }}</td>
+            <td>{{ detail.request.lockerRoom }}</td>
+            <th>HDP</th>
+            <td colspan="2">{{ detail.request.hdp === 'Y' ? 'Yes' : 'No' }}</td>
           </tr>
           <tr>
             <th>Additional Information</th>
