@@ -200,6 +200,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .review-form {
   display: grid;
   gap: 16px;
+  max-height: min(82vh, 980px);
+  min-width: min(980px, calc(100vw - 80px));
+  overflow: auto;
   padding-right: 40px;
 }
 
@@ -218,6 +221,31 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .review-grid .wide {
   grid-column: 1 / -1;
+}
+
+.request-detail {
+  display: grid;
+  gap: 10px;
+}
+
+.request-detail h3 {
+  color: #27384c;
+  font-size: 15px;
+  margin: 4px 0 0;
+}
+
+.request-detail table {
+  table-layout: fixed;
+}
+
+.request-detail table th:nth-child(1),
+.request-detail table th:nth-child(3) {
+  width: 12%;
+}
+
+.request-detail table td:nth-child(2),
+.request-detail table td:nth-child(4) {
+  width: 38%;
 }
 
 .review-actions,
@@ -245,6 +273,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .row-actions button.secondary {
   background: #ffffff;
   color: #25384e;
+}
+
+.row-actions button.approve {
+  background: #2f7d43;
+  border-color: #2f7d43;
+}
+
+.row-actions button.deny {
+  background: #aa2e2e;
+  border-color: #aa2e2e;
 }
 
 .row-actions {

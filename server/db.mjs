@@ -26,6 +26,7 @@ export {
 } from './db/coordinators-data.mjs';
 export {
   getAdminCurrentSanctionRequests,
+  getAdminSanctionRequestDetail,
   getTournamentDirectorEmailBroadcast,
   sendTournamentDirectorEmailBroadcast,
   updateAdminSanctionRequestReview

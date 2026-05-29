@@ -82,7 +82,7 @@
 @if (reviewingRequest) {
   <app-modal (closed)="closeReview()">
     <form [formGroup]="reviewForm" class="review-form" (ngSubmit)="submitReview()">
-      <h2>Review Sanction Request</h2>
+      <h2>{{ showReviewDetails ? 'View Sanction Request' : 'Review Sanction Request' }}</h2>
       <p>
         {{ reviewingRequest.clubCode }} · {{ reviewingRequest.date || 'No date' }} ·
         {{ reviewingRequest.division }} · {{ reviewingRequest.name }}
@@ -90,6 +90,156 @@
 
       @if (reviewError) {
         <p class="error-message">{{ reviewError }}</p>
+      }
+
+      @if (showReviewDetails && loadingReviewDetail) {
+        <p class="notice-message">Loading sanction request details...</p>
+      } @else if (showReviewDetails && reviewingDetail; as detail) {
+        <section class="request-detail">
+          <h3>Request Details</h3>
+          <table>
+            <tbody>
+              <tr>
+                <th>Tournament</th>
+                <td>{{ detail.request.tournamentName }}</td>
+                <th>Date</th>
+                <td>{{ detail.request.date }}</td>
+              </tr>
+              <tr>
+                <th>Site</th>
+                <td>{{ detail.request.site }}</td>
+                <th>Start Time</th>
+                <td>{{ detail.request.startTime }}</td>
+              </tr>
+              <tr>
+                <th>Address</th>
+                <td colspan="3">{{ detail.request.siteAddress }}</td>
+              </tr>
+              <tr>
+                <th>Host Club</th>
+                <td>{{ detail.club.clubName }} ({{ detail.club.clubCode }})</td>
+                <th>Submitted</th>
+                <td>{{ detail.submitDate }}</td>
+              </tr>
+              <tr>
+                <th>Contact Name</th>
+                <td>{{ detail.request.tournamentContactName }}</td>
+                <th>Phone</th>
+                <td>{{ detail.request.tournamentDirectorHomePhone }}</td>
+              </tr>
+              <tr>
+                <th>Contact Address</th>
+                <td colspan="3">{{ detail.request.tournamentContactAddress }}</td>
+              </tr>
+              <tr>
+                <th>Tournament Director</th>
+                <td>{{ detail.request.tournamentDirectorName }}</td>
+                <th>Email</th>
+                <td>{{ detail.request.tournamentDirectorEmail }}</td>
+              </tr>
+              <tr>
+                <th>Cell / Website</th>
+                <td>{{ detail.request.tournamentDirectorTournamentPhone }}</td>
+                <th>Requester</th>
+                <td>{{ detail.request.requester }}</td>
+              </tr>
+              <tr>
+                <th>Age Group</th>
+                <td>{{ detail.request.division }}</td>
+                <th>Type</th>
+                <td>{{ detail.request.type }}</td>
+              </tr>
+              <tr>
+                <th>Teams</th>
+                <td>{{ detail.request.numberOfTeams }}</td>
+                <th>Minimum Teams</th>
+                <td>{{ detail.request.minimumNumberOfTeams }}</td>
+              </tr>
+              <tr>
+                <th>Entry Fee</th>
+                <td>{{ detail.request.entryFee | currency }}</td>
+                <th>Payable To</th>
+                <td>{{ detail.request.checkPayableTo }}</td>
+              </tr>
+              <tr>
+                <th>Payment</th>
+                <td>{{ detail.request.paymentType.join(', ') }}</td>
+                <th>Payment URL</th>
+                <td>{{ detail.request.paymentUrl }}</td>
+              </tr>
+              <tr>
+                <th>SAGO</th>
+                <td>{{ detail.request.singleAgeGroupOpen === 'Y' ? 'Yes' : 'No' }}</td>
+                <th>HDP</th>
+                <td>{{ detail.request.hdp === 'Y' ? 'Yes' : 'No' }}</td>
+              </tr>
+              <tr>
+                <th>Pool Play</th>
+                <td>{{ detail.request.poolPlay }}</td>
+                <th>Playoff Format</th>
+                <td>{{ detail.request.playoffFormat }}</td>
+              </tr>
+              <tr>
+                <th>Qtr Finals</th>
+                <td>{{ detail.request.quarterFinals }}</td>
+                <th>Semi Finals</th>
+                <td>{{ detail.request.semiFinals }}</td>
+              </tr>
+              <tr>
+                <th>Finals</th>
+                <td>{{ detail.request.finals }}</td>
+                <th>Awards</th>
+                <td>{{ detail.request.awards }}</td>
+              </tr>
+              <tr>
+                <th>Showers</th>
+                <td>{{ detail.request.showers }}</td>
+                <th>Food</th>
+                <td>{{ detail.request.food }}</td>
+              </tr>
+              <tr>
+                <th>Locker Room</th>
+                <td>{{ detail.request.lockerRoom }}</td>
+                <th>Sanction Number</th>
+                <td>{{ detail.sanctionId }}</td>
+              </tr>
+              <tr>
+                <th>Information</th>
+                <td colspan="3">{{ detail.request.information }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Income / Expense Worksheet</h3>
+          <table>
+            <tbody>
+              <tr>
+                <th>Facility</th>
+                <td>{{ detail.request.expenseFacility | currency }}</td>
+                <th>Officials</th>
+                <td>{{ detail.request.expenseOfficialsFees | currency }}</td>
+              </tr>
+              <tr>
+                <th>Volleyballs</th>
+                <td>{{ detail.request.expenseVolleyballs | currency }}</td>
+                <th>Awards</th>
+                <td>{{ detail.request.expenseAwards | currency }}</td>
+              </tr>
+              <tr>
+                <th>Supplies</th>
+                <td>{{ detail.request.expenseSupplies | currency }}</td>
+                <th>Other Expenses</th>
+                <td>{{ detail.request.expenseOther | currency }}</td>
+              </tr>
+              <tr>
+                <th>Other Income</th>
+                <td>{{ detail.request.otherIncome | currency }}</td>
+                <th>Net</th>
+                <td>{{ detail.request.netIncome | currency }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
       }
 
       <div class="review-grid">
@@ -128,7 +278,7 @@
       </p>
 
       <div class="review-actions">
-        <button type="submit" [disabled]="savingReview">{{ savingReview ? 'Saving...' : 'Save Review' }}</button>
+        <button type="submit" [disabled]="savingReview || loadingReviewDetail">{{ savingReview ? 'Saving...' : 'Save Review' }}</button>
         <button type="button" class="secondary" [disabled]="savingReview" (click)="closeReview()">Cancel</button>
       </div>
     </form>
@@ -349,9 +499,9 @@
                 </td>
                 <td>
                   <div class="row-actions">
-                    <button type="button" (click)="openReview(request, 'Approved')">Approve</button>
-                    <button type="button" class="secondary" (click)="openReview(request, 'Denied')">Deny</button>
-                    <button type="button" class="secondary" (click)="openReview(request)">Edit</button>
+                    <button type="button" (click)="openReview(request, request.sanctionStatus, true)">View</button>
+                    <button type="button" class="approve" (click)="openReview(request, 'Approved')">Approve</button>
+                    <button type="button" class="deny" (click)="openReview(request, 'Denied')">Deny</button>
                   </div>
                 </td>
               </tr>

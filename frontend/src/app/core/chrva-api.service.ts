@@ -175,6 +175,12 @@ export class ChrvaApiService {
     });
   }
 
+  getAdminSanctionRequest(requestId: string): Observable<SanctionRequestDetailResult> {
+    return this.http.get<SanctionRequestDetailResult>(
+      `${this.baseUrl}/admin/sanction-requests/${encodeURIComponent(requestId)}`
+    );
+  }
+
   getTournamentDirectorEmailBroadcast(
     search: AdminSanctionRequestSearch
   ): Observable<TournamentDirectorEmailBroadcast> {

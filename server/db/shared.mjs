@@ -371,7 +371,8 @@ export function mapSanctionRequestDetail(row) {
       expenseAwards: formString(row.Expense_awards),
       expenseSupplies: formString(row.Expense_supplies),
       expenseOther: formString(row.Expense_other),
-      otherIncome: formString(row.otherIncome)
+      otherIncome: formString(row.otherIncome),
+      netIncome: formString(row.netIncome)
     }
   };
 }

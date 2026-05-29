@@ -7,6 +7,7 @@ import {
   AdminSanctionRequestSearch,
   AdminSanctionRequestSummary,
   ClubEmailRecipient,
+  SanctionRequestDetailResult,
   TournamentDirectorEmailBroadcast
 } from '../../../core/api.models';
 import { ChrvaApiService } from '../../../core/chrva-api.service';
@@ -65,11 +66,14 @@ export class AdminCurrentSanctionRequestsPageComponent implements OnDestroy {
   readonly priorityOptions = ['0', '1', '2', '3', '4', '5', '6', '9'];
   readonly refresh$ = new Subject<void>();
   reviewingRequest: AdminSanctionRequestSummary | null = null;
+  reviewingDetail: SanctionRequestDetailResult | null = null;
+  showReviewDetails = false;
   emailBroadcast: TournamentDirectorEmailBroadcast | null = null;
   reviewError = '';
   emailError = '';
   emailStatus = '';
   savingReview = false;
+  loadingReviewDetail = false;
   sendingEmail = false;
 
   readonly vm$ = this.api.getConfig().pipe(
@@ -232,14 +236,34 @@ export class AdminCurrentSanctionRequestsPageComponent implements OnDestroy {
     this.changeDetector.detectChanges();
   }
 
-  openReview(request: AdminSanctionRequestSummary, sanctionStatus = request.sanctionStatus): void {
+  openReview(request: AdminSanctionRequestSummary, sanctionStatus = request.sanctionStatus, showDetails = false): void {
     this.reviewingRequest = request;
+    this.reviewingDetail = null;
     this.reviewError = '';
+    this.showReviewDetails = showDetails;
+    this.loadingReviewDetail = showDetails;
     this.reviewForm.setValue({
       sanctionStatus,
       sanctionId: request.sanctionId || 'New',
       priority: request.hdp && sanctionStatus === 'Approved' ? '1' : request.priority ?? '0',
       sanctionNotes: request.sanctionNotes
+    });
+
+    if (!showDetails) {
+      return;
+    }
+
+    this.api.getAdminSanctionRequest(request.id).subscribe({
+      next: (detail) => {
+        this.loadingReviewDetail = false;
+        this.reviewingDetail = detail;
+        this.changeDetector.detectChanges();
+      },
+      error: (error) => {
+        this.loadingReviewDetail = false;
+        this.reviewError = getHttpErrorMessage(error, 'Unable to load sanction request.');
+        this.changeDetector.detectChanges();
+      }
     });
   }
 
@@ -249,7 +273,10 @@ export class AdminCurrentSanctionRequestsPageComponent implements OnDestroy {
     }
 
     this.reviewingRequest = null;
+    this.reviewingDetail = null;
+    this.showReviewDetails = false;
     this.reviewError = '';
+    this.loadingReviewDetail = false;
   }
 
   submitReview(): void {
@@ -264,6 +291,8 @@ export class AdminCurrentSanctionRequestsPageComponent implements OnDestroy {
       next: () => {
         this.savingReview = false;
         this.reviewingRequest = null;
+        this.reviewingDetail = null;
+        this.showReviewDetails = false;
         this.refresh$.next();
       },
       error: (error) => {

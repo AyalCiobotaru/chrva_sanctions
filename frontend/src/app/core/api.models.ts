@@ -143,6 +143,7 @@ export interface NewSanctionRequest {
   expenseSupplies: string;
   expenseOther: string;
   otherIncome: string;
+  netIncome?: string;
 }
 
 export interface SanctionRequestRenewalSource {

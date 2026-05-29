@@ -13,6 +13,7 @@ import {
   getTournamentChairs,
   isEmailDeliveryConfigured,
   mapAdminSanctionRequest,
+  mapSanctionRequestDetail,
   normalizeNullableDate,
   sendRecipientEmails,
   text,
@@ -184,6 +185,39 @@ export async function sendTournamentDirectorEmailBroadcast(filters, body) {
       ? 'Email delivery is not configured. This tournament director broadcast was validated but not sent.'
       : `Requestor email sent to ${recipients.length} recipient${recipients.length > 1 ? 's':''}.`
   };
+}
+
+export async function getAdminSanctionRequestDetail(requestId) {
+  const id = Number(requestId);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    const error = new Error('Sanction request id is invalid.');
+    error.statusCode = 400;
+    error.code = 'ERR_VALIDATION';
+    throw error;
+  }
+
+  const pool = await getPool();
+  const result = await pool.request()
+    .input('id', sql.Int, id)
+    .query(`
+      select
+        sr.*,
+        cc.ClubName,
+        (case when datepart(w, sr.dte) = 1 then datepart(ww, sr.dte) - 1 else datepart(ww, sr.dte) end) as weekNumber
+      from sanction_requested sr
+      left join clubcontacts cc on sr.clubcode = cc.ClubCode
+      where sr.id = @id
+    `);
+
+  if (result.recordset.length === 0) {
+    const error = new Error('Sanction request was not found.');
+    error.statusCode = 404;
+    error.code = 'ERR_SANCTION_REQUEST_NOT_FOUND';
+    throw error;
+  }
+
+  return mapSanctionRequestDetail(result.recordset[0]);
 }
 
 export async function updateAdminSanctionRequestReview(requestId, body) {
