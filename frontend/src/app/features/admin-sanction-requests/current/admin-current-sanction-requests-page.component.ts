@@ -9,12 +9,13 @@ import {
   ClubEmailRecipient,
   SanctionRequestDetailResult,
   TournamentDirectorEmailBroadcast
-} from '../../../core/api.models';
-import { ChrvaApiService } from '../../../core/chrva-api.service';
-import { getHttpErrorMessage } from '../../../core/http-error';
-import { ModalComponent } from '../../../util/modal/modal.component';
-import { MultiSelectDropdownComponent, MultiSelectOption } from '../../../util/multi-select-dropdown/multi-select-dropdown.component';
-import { RichTextEditorComponent } from '../../../util/rich-text-editor/rich-text-editor.component';
+} from '@core/api.models';
+import { FIRST_LEGACY_SEASON, SANCTION_FEE_PER_TEAM } from '@core/business-rules';
+import { ChrvaApiService } from '@core/chrva-api.service';
+import { getHttpErrorMessage } from '@core/http-error';
+import { ModalComponent } from '@util/modal/modal.component';
+import { MultiSelectDropdownComponent, MultiSelectOption } from '@util/multi-select-dropdown/multi-select-dropdown.component';
+import { RichTextEditorComponent } from '@util/rich-text-editor/rich-text-editor.component';
 
 interface AdminSanctionRequestWeekGroup {
   key: string;
@@ -32,8 +33,9 @@ interface AdminSanctionRequestWeekGroup {
   styleUrl: './admin-current-sanction-requests-page.component.scss'
 })
 export class AdminCurrentSanctionRequestsPageComponent implements OnDestroy {
-  private readonly firstLegacySeason = 2016;
+  private readonly firstLegacySeason = FIRST_LEGACY_SEASON;
   private emailToastTimeout: ReturnType<typeof setTimeout> | null = null;
+  readonly sanctionFeePerTeam = SANCTION_FEE_PER_TEAM;
 
   readonly form = this.fb.nonNullable.group({
     season: '2026',

@@ -236,7 +236,7 @@
             <input type="number" min="0" formControlName="expenseFacility" />
           </label>
           <label>
-            Sanction fee ($7.00 per team)
+            Sanction fee ({{ sanctionFeePerTeam | currency }} per team)
             <input type="number" [value]="expenseSanctionFees" readonly />
           </label>
           <label>
@@ -288,7 +288,7 @@
 
           <div class="math-summary">
             <h3>Behind the Scenes</h3>
-            <p>Sanction fee = number of teams x $7.00.</p>
+            <p>Sanction fee = number of teams x {{ sanctionFeePerTeam | currency }}.</p>
             <p>Entry fee income = tournament fee x number of teams.</p>
             <p>Total expenses = facility + sanction fee + officials + volleyballs + awards + supplies + other expenses.</p>
             <p>Net profit/loss = other income + entry fee income - total expenses.</p>

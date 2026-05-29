@@ -131,7 +131,7 @@
             <th colspan="2">Estimated</th>
           </tr>
           <tr><td colspan="3">Facility charges</td><td colspan="2">{{ detail.request.expenseFacility | currency }}</td></tr>
-          <tr><td colspan="3">Sanction fee ($7.00 per team)</td><td colspan="2">{{ (+detail.request.numberOfTeams || 0) * 7 | currency }}</td></tr>
+          <tr><td colspan="3">Sanction fee ({{ sanctionFeePerTeam | currency }} per team)</td><td colspan="2">{{ (+detail.request.numberOfTeams || 0) * sanctionFeePerTeam | currency }}</td></tr>
           <tr><td colspan="3">Officials fees</td><td colspan="2">{{ detail.request.expenseOfficialsFees | currency }}</td></tr>
           <tr><td colspan="3">New volleyballs</td><td colspan="2">{{ detail.request.expenseVolleyballs | currency }}</td></tr>
           <tr><td colspan="3">Awards</td><td colspan="2">{{ detail.request.expenseAwards | currency }}</td></tr>

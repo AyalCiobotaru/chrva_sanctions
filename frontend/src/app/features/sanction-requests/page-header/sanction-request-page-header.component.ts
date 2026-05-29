@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { Component, Input } from '@angular/core';
-import { SanctionClubAuthService } from '../../../core/sanction-club-auth.service';
+import { SanctionClubAuthService } from '@core/sanction-club-auth.service';
 
 @Component({
   selector: 'app-sanction-request-page-header',

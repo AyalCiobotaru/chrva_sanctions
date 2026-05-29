@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { SanctionClubAuthService } from '../../../core/sanction-club-auth.service';
+import { SanctionClubAuthService } from '@core/sanction-club-auth.service';
 
 @Component({
   selector: 'app-sanction-request-login-page',

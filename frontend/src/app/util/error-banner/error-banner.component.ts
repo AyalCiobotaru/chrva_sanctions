@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { AppErrorService } from '../../core/app-error.service';
+import { AppErrorService } from '@core/app-error.service';
 
 @Component({
   selector: 'app-error-banner',

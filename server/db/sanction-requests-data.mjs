@@ -1,4 +1,5 @@
 import sql from 'mssql';
+import { DEFAULT_SANCTION_START_TIME, RENEWAL_PUSH_WEEK_SEASONS } from './business-rules.mjs';
 import {
   addWeeksDate,
   buildStartTimes,
@@ -38,7 +39,7 @@ export async function getSanctionRequestHistory(clubCode) {
   const currentSeason = Number(config.currentSeason);
   const appendPrevious = seasonSuffix(previousSeason);
   const appendCurrent = seasonSuffix(currentSeason);
-  const pushWeeks = currentSeason === 2016 || currentSeason === 2022 ? 1 : 0;
+  const pushWeeks = RENEWAL_PUSH_WEEK_SEASONS.includes(currentSeason) ? 1 : 0;
   const club = await getSanctionClub(pool, clubCode);
 
   const result = await pool.request()
@@ -107,7 +108,7 @@ export async function getSanctionRequestRenewal(clubCode, sourceId) {
   const currentSeason = Number(config.currentSeason);
   const appendPrevious = seasonSuffix(previousSeason);
   const appendCurrent = seasonSuffix(currentSeason);
-  const pushWeeks = currentSeason === 2016 || currentSeason === 2022 ? 1 : 0;
+  const pushWeeks = RENEWAL_PUSH_WEEK_SEASONS.includes(currentSeason) ? 1 : 0;
 
   await getSanctionClub(pool, clubCode);
 
@@ -210,7 +211,7 @@ export async function getSanctionRequestRenewal(clubCode, sourceId) {
       tournamentDirectorHomePhone: text(row.TournamentDirector_homePhone),
       tournamentDirectorTournamentPhone: text(row.TournamentDirector_TournamentPhone),
       date: addWeeksDate(row.dte, 52 + pushWeeks),
-      startTime: formatDisplayTime(row.startTime) || '8:30 AM',
+      startTime: formatDisplayTime(row.startTime) || DEFAULT_SANCTION_START_TIME,
       division: text(row.division).includes('/') ? '' : text(row.division),
       numberOfTeams: formString(row.number_of_teams),
       minimumNumberOfTeams: formString(row.min_number_of_teams),

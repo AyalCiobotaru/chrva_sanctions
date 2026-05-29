@@ -1,5 +1,10 @@
 import sql from 'mssql';
 import { isEmailDeliveryConfigured, sendEmail } from '../mail.mjs';
+import {
+  DEFAULT_SANCTION_START_TIME,
+  SANCTION_FEE_PER_TEAM,
+  SANCTION_NET_INCOME_LIMIT
+} from './business-rules.mjs';
 
 export const NO_REPLY_EMAIL_FROM = 'no-reply@chrvajuniors.org';
 export { isEmailDeliveryConfigured };
@@ -339,7 +344,7 @@ export function mapSanctionRequestDetail(row) {
       tournamentDirectorHomePhone: text(row.TournamentDirector_homePhone),
       tournamentDirectorTournamentPhone: text(row.TournamentDirector_TournamentPhone),
       date: toDate(row.dte),
-      startTime: formatDisplayTime(row.startTime) || '8:30 AM',
+      startTime: formatDisplayTime(row.startTime) || DEFAULT_SANCTION_START_TIME,
       division: text(row.division),
       numberOfTeams: formString(row.number_of_teams),
       minimumNumberOfTeams: formString(row.min_number_of_teams),
@@ -853,7 +858,7 @@ export function addExactDate(where, request, name, column, value) {
 export function normalizeSanctionRequestInput(body) {
   const numberOfTeams = wholeNumber(body?.numberOfTeams);
   const entryFee = money(body?.entryFee);
-  const expenseSanctionFees = numberOfTeams * 7;
+  const expenseSanctionFees = numberOfTeams * SANCTION_FEE_PER_TEAM;
   const totalbox = entryFee * numberOfTeams;
   const expenseFacility = money(body?.expenseFacility);
   const expenseOfficialsFees = money(body?.expenseOfficialsFees);
@@ -971,7 +976,7 @@ export function validateSanctionRequest(request) {
     errors.push('Accepted Payment Types must be 50 characters or fewer.');
   }
 
-  if (request.netIncome > 250) {
+  if (request.netIncome > SANCTION_NET_INCOME_LIMIT) {
     errors.push('Net Income exceeds a valid limit. Modify your tournament fee or worksheet.');
   }
 

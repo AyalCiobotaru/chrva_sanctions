@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { Component } from '@angular/core';
-import { ChrvaApiService } from '../../core/chrva-api.service';
+import { ChrvaApiService } from '@core/chrva-api.service';
 
 @Component({
   selector: 'app-overview-page',

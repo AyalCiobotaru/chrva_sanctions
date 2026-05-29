@@ -1,7 +1,7 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ChrvaApiService } from '../../../core/chrva-api.service';
+import { ChrvaApiService } from '@core/chrva-api.service';
 import { SanctionRequestPageHeaderComponent } from '../page-header/sanction-request-page-header.component';
 
 @Component({

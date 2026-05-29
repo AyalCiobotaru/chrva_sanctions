@@ -2,11 +2,12 @@ import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { map, merge, startWith, Subject, switchMap, tap } from 'rxjs';
-import { getHttpErrorMessage } from '../../core/http-error';
-import { TournamentSearch } from '../../core/api.models';
-import { ChrvaApiService } from '../../core/chrva-api.service';
-import { InlineCheckboxFieldComponent } from '../../util/inline-checkbox-field/inline-checkbox-field.component';
-import { InlineDateFieldComponent } from '../../util/inline-date-field/inline-date-field.component';
+import { TournamentSearch } from '@core/api.models';
+import { FIRST_LEGACY_SEASON } from '@core/business-rules';
+import { ChrvaApiService } from '@core/chrva-api.service';
+import { getHttpErrorMessage } from '@core/http-error';
+import { InlineCheckboxFieldComponent } from '@util/inline-checkbox-field/inline-checkbox-field.component';
+import { InlineDateFieldComponent } from '@util/inline-date-field/inline-date-field.component';
 
 @Component({
   selector: 'app-tournaments-page',
@@ -16,7 +17,7 @@ import { InlineDateFieldComponent } from '../../util/inline-date-field/inline-da
   styleUrl: './tournaments-page.component.scss'
 })
 export class TournamentsPageComponent {
-  private readonly firstLegacySeason = 2016;
+  private readonly firstLegacySeason = FIRST_LEGACY_SEASON;
 
   readonly savingAddedToAes = new Set<string>();
   readonly addedToAesErrors = new Map<string, string>();

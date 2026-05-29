@@ -2,10 +2,10 @@ import { AsyncPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BehaviorSubject, merge, startWith, switchMap } from 'rxjs';
-import { CoordinatorRequest, CoordinatorSearch, CoordinatorSummary } from '../../core/api.models';
-import { ChrvaApiService } from '../../core/chrva-api.service';
-import { getHttpErrorMessage } from '../../core/http-error';
-import { ModalComponent } from '../../util/modal/modal.component';
+import { CoordinatorRequest, CoordinatorSearch, CoordinatorSummary } from '@core/api.models';
+import { ChrvaApiService } from '@core/chrva-api.service';
+import { getHttpErrorMessage } from '@core/http-error';
+import { ModalComponent } from '@util/modal/modal.component';
 
 @Component({
   selector: 'app-coordinators-page',

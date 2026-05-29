@@ -2,12 +2,12 @@ import { AsyncPipe } from '@angular/common';
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, merge, startWith, Subject, switchMap } from 'rxjs';
-import { ClubEmailBroadcast, ClubEmailRecipient, ClubSearch, ClubSummary, NewClubRequest } from '../../core/api.models';
-import { ChrvaApiService } from '../../core/chrva-api.service';
-import { getHttpErrorMessage } from '../../core/http-error';
+import { ClubEmailBroadcast, ClubEmailRecipient, ClubSearch, ClubSummary, NewClubRequest } from '@core/api.models';
+import { ChrvaApiService } from '@core/chrva-api.service';
+import { getHttpErrorMessage } from '@core/http-error';
 import { ClubFormComponent } from './club-form/club-form.component';
-import { ModalComponent } from '../../util/modal/modal.component';
-import { RichTextEditorComponent } from '../../util/rich-text-editor/rich-text-editor.component';
+import { ModalComponent } from '@util/modal/modal.component';
+import { RichTextEditorComponent } from '@util/rich-text-editor/rich-text-editor.component';
 
 @Component({
   selector: 'app-clubs-page',

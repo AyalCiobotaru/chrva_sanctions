@@ -1,0 +1,4 @@
+export const SANCTION_FEE_PER_TEAM = 7;
+export const SANCTION_NET_INCOME_LIMIT = 250;
+export const DEFAULT_SANCTION_START_TIME = '8:30 AM';
+export const RENEWAL_PUSH_WEEK_SEASONS = [2016, 2022];

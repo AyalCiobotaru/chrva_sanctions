@@ -3,10 +3,10 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Subscription, filter } from 'rxjs';
-import { AuthService } from './core/auth.service';
-import { AuthSession } from './core/api.models';
-import { SanctionClubAuthService } from './core/sanction-club-auth.service';
-import { ErrorBannerComponent } from './util/error-banner/error-banner.component';
+import { AuthSession } from '@core/api.models';
+import { AuthService } from '@core/auth.service';
+import { SanctionClubAuthService } from '@core/sanction-club-auth.service';
+import { ErrorBannerComponent } from '@util/error-banner/error-banner.component';
 
 type NavSection = 'admin' | 'clubs';
 

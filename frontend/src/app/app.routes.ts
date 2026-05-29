@@ -1,18 +1,18 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth.guard';
-import { AdminCurrentSanctionRequestsPageComponent } from './features/admin-sanction-requests/current/admin-current-sanction-requests-page.component';
-import { sanctionClubGuard } from './core/sanction-club.guard';
-import { ClubsPageComponent } from './features/clubs/clubs-page.component';
-import { CoordinatorsPageComponent } from './features/coordinators/coordinators-page.component';
-import { LoginPageComponent } from './features/login/login-page.component';
-import { MigrationPageComponent } from './features/migration/migration-page.component';
-import { OverviewPageComponent } from './features/overview/overview-page.component';
-import { CurrentSanctionRequestsPageComponent } from './features/sanction-requests/current/current-sanction-requests-page.component';
-import { SanctionHistoryPageComponent } from './features/sanction-requests/history/sanction-history-page.component';
-import { SanctionRequestFormPageComponent } from './features/sanction-requests/form/sanction-request-form-page.component';
-import { SanctionRequestLoginPageComponent } from './features/sanction-requests/login/sanction-request-login-page.component';
-import { SanctionRequestPrintPageComponent } from './features/sanction-requests/print/sanction-request-print-page.component';
-import { TournamentsPageComponent } from './features/tournaments/tournaments-page.component';
+import { authGuard } from '@core/auth.guard';
+import { sanctionClubGuard } from '@core/sanction-club.guard';
+import { AdminCurrentSanctionRequestsPageComponent } from '@features/admin-sanction-requests/current/admin-current-sanction-requests-page.component';
+import { ClubsPageComponent } from '@features/clubs/clubs-page.component';
+import { CoordinatorsPageComponent } from '@features/coordinators/coordinators-page.component';
+import { LoginPageComponent } from '@features/login/login-page.component';
+import { MigrationPageComponent } from '@features/migration/migration-page.component';
+import { OverviewPageComponent } from '@features/overview/overview-page.component';
+import { CurrentSanctionRequestsPageComponent } from '@features/sanction-requests/current/current-sanction-requests-page.component';
+import { SanctionRequestFormPageComponent } from '@features/sanction-requests/form/sanction-request-form-page.component';
+import { SanctionHistoryPageComponent } from '@features/sanction-requests/history/sanction-history-page.component';
+import { SanctionRequestLoginPageComponent } from '@features/sanction-requests/login/sanction-request-login-page.component';
+import { SanctionRequestPrintPageComponent } from '@features/sanction-requests/print/sanction-request-print-page.component';
+import { TournamentsPageComponent } from '@features/tournaments/tournaments-page.component';
 
 export const routes: Routes = [
   { path: '', component: OverviewPageComponent, title: 'CHRVA Juniors Migration' },

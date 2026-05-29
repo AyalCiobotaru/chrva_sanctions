@@ -2,8 +2,8 @@ import { AsyncPipe, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BehaviorSubject, switchMap } from 'rxjs';
-import { ChrvaApiService } from '../../../core/chrva-api.service';
-import { getHttpErrorMessage } from '../../../core/http-error';
+import { ChrvaApiService } from '@core/chrva-api.service';
+import { getHttpErrorMessage } from '@core/http-error';
 import { SanctionRequestPageHeaderComponent } from '../page-header/sanction-request-page-header.component';
 
 @Component({
