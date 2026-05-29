@@ -15,6 +15,7 @@ import {
   html,
   mapSanctionRequestDetail,
   money,
+  normalizePaymentTypes,
   normalizeSanctionRequestInput,
   normalizeNullableDate,
   parseStartTime,

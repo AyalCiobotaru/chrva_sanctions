@@ -18,7 +18,12 @@ export {
   sendClubEmailBroadcast,
   updateClub
 } from './db/clubs-data.mjs';
-export { searchCoordinators } from './db/coordinators-data.mjs';
+export {
+  createCoordinator,
+  deleteCoordinator,
+  searchCoordinators,
+  updateCoordinator
+} from './db/coordinators-data.mjs';
 export {
   getAdminCurrentSanctionRequests,
   getTournamentDirectorEmailBroadcast,

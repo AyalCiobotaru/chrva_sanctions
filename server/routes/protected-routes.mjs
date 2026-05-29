@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { requireRole, requireSession } from '../auth.mjs';
 import {
   createClub,
+  createCoordinator,
+  deleteCoordinator,
   exportClubsDirectory,
   getAdminCurrentSanctionRequests,
   getClubEmailBroadcast,
@@ -14,6 +16,7 @@ import {
   sendTournamentDirectorEmailBroadcast,
   updateAdminSanctionRequestReview,
   updateClub,
+  updateCoordinator,
   updateTournamentAddedToAes,
   updateTournamentOkToPay
 } from '../db.mjs';
@@ -54,6 +57,20 @@ export async function handleProtectedRoutes({ appRoot, request, response, route,
 
   if (route === 'GET /api/coordinators') {
     return json(response, await searchCoordinators(url.searchParams));
+  }
+
+  if (route === 'POST /api/coordinators') {
+    return json(response, await createCoordinator(await readJson(request)), 201);
+  }
+
+  if (request.method === 'PUT' && url.pathname.startsWith('/api/coordinators/')) {
+    const category = decodeURIComponent(url.pathname.slice('/api/coordinators/'.length));
+    return json(response, await updateCoordinator(category, await readJson(request)));
+  }
+
+  if (request.method === 'DELETE' && url.pathname.startsWith('/api/coordinators/')) {
+    const category = decodeURIComponent(url.pathname.slice('/api/coordinators/'.length));
+    return json(response, await deleteCoordinator(category));
   }
 
   if (route === 'GET /api/tournaments') {

@@ -301,9 +301,12 @@ export interface CoordinatorSearch {
 
 export interface CoordinatorSummary {
   category: string;
+  level: string;
   grouping: string;
   firstName: string;
   lastName: string;
+  address1: string;
+  address2: string;
   address: string;
   city: string;
   state: string;
@@ -313,6 +316,30 @@ export interface CoordinatorSummary {
   extension: string;
   fax: string;
   email: string;
+  displayRecord: string;
+  type: string;
+}
+
+export interface CoordinatorRequest {
+  category: string;
+  level: string;
+  grouping: string;
+  firstName: string;
+  lastName: string;
+  address1: string;
+  address2: string;
+  city: string;
+  state: string;
+  zip: string;
+  phonePrimary: string;
+  phoneSecondary: string;
+  extension: string;
+  fax: string;
+  email: string;
+}
+
+export interface DeleteCoordinatorResult {
+  deleted: boolean;
 }
 
 export interface TournamentSearch {

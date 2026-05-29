@@ -3,7 +3,103 @@
     <h1>Regional Junior Contacts</h1>
     <p>Search regional contacts from the configured SQL Server environment.</p>
   </div>
+  <div class="actions">
+    <button type="button" (click)="openNewCoordinator()">Add Contact</button>
+  </div>
 </section>
+
+@if (actionError) {
+  <p class="alert error" role="alert">{{ actionError }}</p>
+}
+@if (actionStatus) {
+  <p class="alert success" role="status">{{ actionStatus }}</p>
+}
+
+@if (showCoordinatorForm) {
+  <app-modal (closed)="closeCoordinatorForm()">
+    <form [formGroup]="coordinatorForm" class="coordinator-form" (ngSubmit)="saveCoordinator()">
+      <h2>{{ editingCoordinator ? 'Edit Contact' : 'Add Contact' }}</h2>
+      @if (formError) {
+        <p class="alert error" role="alert">{{ formError }}</p>
+      }
+      <label>
+        Category
+        <select formControlName="grouping">
+          <option value="Coordinator">Age Group Coordinator</option>
+          <option value="Officials">Officials/Scorekeepers</option>
+          <option value="Administrators">Administration</option>
+        </select>
+      </label>
+      <label>
+        Function
+        <input formControlName="category" maxlength="40" />
+      </label>
+      <label>
+        Level
+        <input formControlName="level" maxlength="20" />
+      </label>
+      <label>
+        First Name
+        <input formControlName="firstName" maxlength="20" />
+      </label>
+      <label>
+        Last Name
+        <input formControlName="lastName" maxlength="20" />
+      </label>
+      <label>
+        Email
+        <input formControlName="email" maxlength="80" />
+      </label>
+      <label>
+        Street Address
+        <input formControlName="address1" maxlength="50" />
+      </label>
+      <label>
+        Address 2
+        <input formControlName="address2" maxlength="50" />
+      </label>
+      <label>
+        City
+        <input formControlName="city" maxlength="30" />
+      </label>
+      <label>
+        State
+        <select formControlName="state">
+          <option value="">Select</option>
+          <option value="DC">DC</option>
+          <option value="DE">DE</option>
+          <option value="MD">MD</option>
+          <option value="VA">VA</option>
+          <option value="WV">WV</option>
+        </select>
+      </label>
+      <label>
+        Zip
+        <input formControlName="zip" maxlength="5" />
+      </label>
+      <label>
+        Phone
+        <input formControlName="phonePrimary" maxlength="14" />
+      </label>
+      <label>
+        Alt Phone
+        <input formControlName="phoneSecondary" maxlength="14" />
+      </label>
+      <label>
+        Extension
+        <input formControlName="extension" maxlength="7" />
+      </label>
+      <label>
+        Fax
+        <input formControlName="fax" maxlength="14" />
+      </label>
+      <div class="form-actions">
+        <button type="submit">{{ editingCoordinator ? 'Save Contact' : 'Add Contact' }}</button>
+        <button type="button" class="secondary" (click)="closeCoordinatorForm()">Cancel</button>
+      </div>
+    </form>
+  </app-modal>
+}
 
 <form [formGroup]="form" class="filters">
   <label>
@@ -34,6 +130,7 @@
         <th>Address</th>
         <th>Phone</th>
         <th>Email</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -68,6 +165,17 @@
                 {{ coordinator.email }}
               </a>
             }
+          </td>
+          <td class="table-actions">
+            <button type="button" class="secondary compact" (click)="openEditCoordinator(coordinator)">Edit</button>
+            <button
+              type="button"
+              class="danger compact"
+              [disabled]="deletingCategory === coordinator.category"
+              (click)="deleteCoordinator(coordinator)"
+            >
+              {{ deletingCategory === coordinator.category ? 'Deleting...' : 'Delete' }}
+            </button>
           </td>
         </tr>
       }

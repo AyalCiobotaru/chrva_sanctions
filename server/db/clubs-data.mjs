@@ -5,6 +5,7 @@ import {
   addStartsWith,
   appendEmailFooter,
   clubEmailFromOptions,
+  getClubByCode,
   getPool,
   html,
   mapClub,

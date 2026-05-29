@@ -15,7 +15,9 @@ import {
   AuthSession,
   CreateSanctionRequestResult,
   CoordinatorSearch,
+  CoordinatorRequest,
   CoordinatorSummary,
+  DeleteCoordinatorResult,
   DeleteSanctionRequestResult,
   LegacyConfig,
   MigrationInventory,
@@ -142,6 +144,21 @@ export class ChrvaApiService {
     return this.http.get<CoordinatorSummary[]>(`${this.baseUrl}/coordinators`, {
       params: this.toParams(search)
     });
+  }
+
+  createCoordinator(coordinator: CoordinatorRequest): Observable<CoordinatorSummary> {
+    return this.http.post<CoordinatorSummary>(`${this.baseUrl}/coordinators`, coordinator);
+  }
+
+  updateCoordinator(category: string, coordinator: CoordinatorRequest): Observable<CoordinatorSummary> {
+    return this.http.put<CoordinatorSummary>(
+      `${this.baseUrl}/coordinators/${encodeURIComponent(category)}`,
+      coordinator
+    );
+  }
+
+  deleteCoordinator(category: string): Observable<DeleteCoordinatorResult> {
+    return this.http.delete<DeleteCoordinatorResult>(`${this.baseUrl}/coordinators/${encodeURIComponent(category)}`);
   }
 
   searchTournaments(search: TournamentSearch): Observable<TournamentSummary[]> {
