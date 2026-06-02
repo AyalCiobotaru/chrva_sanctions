@@ -138,7 +138,7 @@
                 <td>{{ detail.request.tournamentDirectorEmail }}</td>
               </tr>
               <tr>
-                <th>Cell / Website</th>
+                <th>Cell Phone</th>
                 <td>{{ detail.request.tournamentDirectorTournamentPhone }}</td>
                 <th>Requester</th>
                 <td>{{ detail.request.requester }}</td>
@@ -164,7 +164,7 @@
               <tr>
                 <th>Payment Types</th>
                 <td>{{ detail.request.paymentType.join(', ') }}</td>
-                <th>Payment URL</th>
+                <th>Stripe Email</th>
                 <td>{{ detail.request.paymentUrl }}</td>
               </tr>
               <tr>
@@ -217,7 +217,7 @@
                 <th>Facility</th>
                 <td>{{ detail.request.expenseFacility | currency }}</td>
                 <th>Sanction Fees</th>
-                <td>{{ (+detail.request.numberOfTeams || 0) * sanctionFeePerTeam | currency }}</td>
+                <td>{{ detail.request.expenseSanctionFees | currency }}</td>
               </tr>
               <tr>
                 <th>Officials</th>
@@ -236,6 +236,12 @@
                 <td>{{ detail.request.expenseOther | currency }}</td>
                 <th>Other Income</th>
                 <td>{{ detail.request.otherIncome | currency }}</td>
+              </tr>
+              <tr>
+                <th>Total Expenses</th>
+                <td>{{ detail.request.expenseTotal | currency }}</td>
+                <th>Entry Fee Income</th>
+                <td>{{ detail.request.entryFeeIncome | currency }}</td>
               </tr>
               <tr>
                 <th>Net</th>

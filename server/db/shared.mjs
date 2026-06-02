@@ -324,6 +324,18 @@ export function ensureEditableSanctionRequest(row) {
 }
 
 export function mapSanctionRequestDetail(row) {
+  const numberOfTeams = wholeNumber(row.number_of_teams);
+  const entryFeeIncome = money(row.entry_fee) * numberOfTeams;
+  const expenseSanctionFees = numberOfTeams * SANCTION_FEE_PER_TEAM;
+  const expenseTotal = money(row.Expense_facility)
+    + expenseSanctionFees
+    + money(row.Expense_officialsFees)
+    + money(row.Expense_volleyballs)
+    + money(row.Expense_awards)
+    + money(row.Expense_supplies)
+    + money(row.Expense_other);
+  const netIncome = money(row.otherIncome) + entryFeeIncome - expenseTotal;
+
   return {
     id: String(row.id),
     club: {
@@ -335,6 +347,7 @@ export function mapSanctionRequestDetail(row) {
     submitDate: toDate(row.submitDate),
     weekNumber: row.weekNumber ?? null,
     canModify: ['Pending', 'Question'].includes(text(row.sanctionStatus)),
+    sanctionFeePerTeam: SANCTION_FEE_PER_TEAM,
     request: {
       sanctionId: text(row.sanctionid),
       tournamentContactName: text(row.TournamentContact_name),
@@ -376,8 +389,11 @@ export function mapSanctionRequestDetail(row) {
       expenseAwards: formString(row.Expense_awards),
       expenseSupplies: formString(row.Expense_supplies),
       expenseOther: formString(row.Expense_other),
+      expenseSanctionFees: formString(expenseSanctionFees),
+      expenseTotal: formString(expenseTotal),
+      entryFeeIncome: formString(entryFeeIncome),
       otherIncome: formString(row.otherIncome),
-      netIncome: formString(row.netIncome)
+      netIncome: formString(netIncome)
     }
   };
 }
@@ -821,7 +837,8 @@ export async function readDbConfig() {
     password: requireEnv('CHRVA_DB_PASSWORD'),
     options: {
       encrypt: process.env.CHRVA_DB_ENCRYPT === 'true',
-      trustServerCertificate: process.env.CHRVA_DB_TRUST_SERVER_CERT !== 'false'
+      trustServerCertificate: process.env.CHRVA_DB_TRUST_SERVER_CERT !== 'false',
+      useUTC: true
     },
     connectionTimeout: Number(process.env.CHRVA_DB_CONNECTION_TIMEOUT ?? 15000),
     requestTimeout: Number(process.env.CHRVA_DB_REQUEST_TIMEOUT ?? 15000)
@@ -1128,7 +1145,7 @@ export function parseStartTime(value) {
     hours = 0;
   }
 
-  return new Date(1970, 0, 1, hours, minutes, 0);
+  return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
 }
 
 export function toTime(value) {
@@ -1238,6 +1255,7 @@ export function formatDisplayTime(value) {
 
   return date.toLocaleTimeString('en-US', {
     hour: 'numeric',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: 'UTC'
   });
 }

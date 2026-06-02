@@ -1,5 +1,10 @@
 import sql from 'mssql';
-import { DEFAULT_SANCTION_START_TIME, RENEWAL_PUSH_WEEK_SEASONS } from './business-rules.mjs';
+import {
+  DEFAULT_SANCTION_START_TIME,
+  RENEWAL_PUSH_WEEK_SEASONS,
+  SANCTION_FEE_PER_TEAM,
+  SANCTION_NET_INCOME_LIMIT
+} from './business-rules.mjs';
 import {
   addWeeksDate,
   buildStartTimes,
@@ -333,7 +338,9 @@ export async function getSanctionRequestFormOptions(clubCode) {
       address: text(row.address)
     })).filter((venue) => venue.name && venue.address),
     ageGroups: ageGroups.map((row) => text(row.agegroup)).filter(Boolean),
-    startTimes: buildStartTimes()
+    startTimes: buildStartTimes(),
+    sanctionFeePerTeam: SANCTION_FEE_PER_TEAM,
+    sanctionNetIncomeLimit: SANCTION_NET_INCOME_LIMIT
   };
 }
 

@@ -99,6 +99,8 @@ export interface SanctionRequestFormOptions {
   venues: SanctionVenueOption[];
   ageGroups: string[];
   startTimes: string[];
+  sanctionFeePerTeam: number;
+  sanctionNetIncomeLimit: number;
 }
 
 export interface NewSanctionRequest {
@@ -142,6 +144,9 @@ export interface NewSanctionRequest {
   expenseAwards: string;
   expenseSupplies: string;
   expenseOther: string;
+  expenseSanctionFees?: string;
+  expenseTotal?: string;
+  entryFeeIncome?: string;
   otherIncome: string;
   netIncome?: string;
 }
@@ -167,6 +172,7 @@ export interface SanctionRequestDetailResult {
   submitDate: string | null;
   weekNumber: number | null;
   canModify: boolean;
+  sanctionFeePerTeam: number;
   request: NewSanctionRequest;
 }
 

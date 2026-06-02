@@ -10,7 +10,7 @@ import {
   SanctionRequestDetailResult,
   TournamentDirectorEmailBroadcast
 } from '@core/api.models';
-import { FIRST_LEGACY_SEASON, SANCTION_FEE_PER_TEAM } from '@core/business-rules';
+import { FIRST_LEGACY_SEASON } from '@core/business-rules';
 import { ChrvaApiService } from '@core/chrva-api.service';
 import { getHttpErrorMessage } from '@core/http-error';
 import { ModalComponent } from '@util/modal/modal.component';
@@ -35,8 +35,6 @@ interface AdminSanctionRequestWeekGroup {
 export class AdminCurrentSanctionRequestsPageComponent implements OnDestroy {
   private readonly firstLegacySeason = FIRST_LEGACY_SEASON;
   private emailToastTimeout: ReturnType<typeof setTimeout> | null = null;
-  readonly sanctionFeePerTeam = SANCTION_FEE_PER_TEAM;
-
   readonly form = this.fb.nonNullable.group({
     season: '2026',
     divisions: [[] as string[]],
