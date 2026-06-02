@@ -837,7 +837,8 @@ export async function readDbConfig() {
     password: requireEnv('CHRVA_DB_PASSWORD'),
     options: {
       encrypt: process.env.CHRVA_DB_ENCRYPT === 'true',
-      trustServerCertificate: process.env.CHRVA_DB_TRUST_SERVER_CERT !== 'false'
+      trustServerCertificate: process.env.CHRVA_DB_TRUST_SERVER_CERT !== 'false',
+      useUTC: true
     },
     connectionTimeout: Number(process.env.CHRVA_DB_CONNECTION_TIMEOUT ?? 15000),
     requestTimeout: Number(process.env.CHRVA_DB_REQUEST_TIMEOUT ?? 15000)
@@ -1144,7 +1145,7 @@ export function parseStartTime(value) {
     hours = 0;
   }
 
-  return new Date(1970, 0, 1, hours, minutes, 0);
+  return new Date(Date.UTC(1970, 0, 1, hours, minutes, 0));
 }
 
 export function toTime(value) {
@@ -1254,6 +1255,7 @@ export function formatDisplayTime(value) {
 
   return date.toLocaleTimeString('en-US', {
     hour: 'numeric',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: 'UTC'
   });
 }
