@@ -3,7 +3,6 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { take } from 'rxjs';
 import { SanctionRequestDetailResult } from '@core/api.models';
-import { SANCTION_FEE_PER_TEAM } from '@core/business-rules';
 import { ChrvaApiService } from '@core/chrva-api.service';
 import { getHttpErrorMessage } from '@core/http-error';
 
@@ -21,7 +20,6 @@ export class SanctionRequestPrintPageComponent implements OnInit, OnDestroy {
   printed = false;
   backLink = '/sanction-requests/current';
   backLabel = 'Back to current requests';
-  readonly sanctionFeePerTeam = SANCTION_FEE_PER_TEAM;
   private readonly afterPrint = () => {
     this.printed = true;
     this.changeDetector.detectChanges();

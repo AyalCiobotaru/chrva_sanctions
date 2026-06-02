@@ -65,7 +65,7 @@
           <tr>
             <th>Playoff Format</th>
             <td>{{ detail.request.playoffFormat }}</td>
-            <th>Cell / Website</th>
+            <th>Cell Phone</th>
             <td colspan="2">{{ detail.request.tournamentDirectorTournamentPhone }}</td>
           </tr>
           <tr>
@@ -77,6 +77,10 @@
           <tr>
             <th>Payment Types</th>
             <td colspan="4">{{ detail.request.paymentType.join(', ') }}</td>
+          </tr>
+          <tr>
+            <th>Stripe Email</th>
+            <td colspan="4">{{ detail.request.paymentUrl }}</td>
           </tr>
           <tr>
             <th>Age Group</th>
@@ -133,19 +137,20 @@
           <tbody>
             <tr><th>Expenses</th><th>Estimated</th></tr>
             <tr><td>Facility charges</td><td>{{ detail.request.expenseFacility | currency }}</td></tr>
-            <tr><td>Sanction fee ({{ sanctionFeePerTeam | currency }} per team)</td><td>{{ (+detail.request.numberOfTeams || 0) * sanctionFeePerTeam | currency }}</td></tr>
+            <tr><td>Sanction fee ({{ detail.sanctionFeePerTeam | currency }} per team)</td><td>{{ detail.request.expenseSanctionFees | currency }}</td></tr>
             <tr><td>Officials fees</td><td>{{ detail.request.expenseOfficialsFees | currency }}</td></tr>
             <tr><td>New volleyballs</td><td>{{ detail.request.expenseVolleyballs | currency }}</td></tr>
             <tr><td>Awards</td><td>{{ detail.request.expenseAwards | currency }}</td></tr>
             <tr><td>Score/lineup sheets, pens, etc.</td><td>{{ detail.request.expenseSupplies | currency }}</td></tr>
             <tr><td>Other expenses</td><td>{{ detail.request.expenseOther | currency }}</td></tr>
+            <tr><th>Total Expenses</th><td>{{ detail.request.expenseTotal | currency }}</td></tr>
           </tbody>
         </table>
 
         <table>
           <tbody>
             <tr><th>Income</th><th>Estimated</th></tr>
-            <tr><td>Entry fee income</td><td>{{ (+detail.request.entryFee || 0) * (+detail.request.numberOfTeams || 0) | currency }}</td></tr>
+            <tr><td>Entry fee income</td><td>{{ detail.request.entryFeeIncome | currency }}</td></tr>
             <tr><td>Other income</td><td>{{ detail.request.otherIncome | currency }}</td></tr>
             <tr><th>Net</th><td>{{ detail.request.netIncome | currency }}</td></tr>
           </tbody>

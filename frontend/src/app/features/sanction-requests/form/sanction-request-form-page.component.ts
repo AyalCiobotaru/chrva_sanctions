@@ -2,9 +2,9 @@ import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize, Observable, take } from 'rxjs';
+import { finalize, Observable, take, tap } from 'rxjs';
 import { CreateSanctionRequestResult, SanctionVenueOption } from '@core/api.models';
-import { DEFAULT_SANCTION_START_TIME, SANCTION_FEE_PER_TEAM, SANCTION_NET_INCOME_LIMIT } from '@core/business-rules';
+import { DEFAULT_SANCTION_START_TIME } from '@core/business-rules';
 import { ChrvaApiService } from '@core/chrva-api.service';
 import { getHttpErrorMessage } from '@core/http-error';
 import { MultiSelectDropdownComponent, MultiSelectOption } from '@util/multi-select-dropdown/multi-select-dropdown.component';
@@ -18,7 +18,12 @@ import { SanctionRequestPageHeaderComponent } from '../page-header/sanction-requ
   styleUrl: './sanction-request-form-page.component.scss'
 })
 export class SanctionRequestFormPageComponent implements OnInit {
-  readonly options$ = this.api.getSanctionRequestFormOptions();
+  readonly options$ = this.api.getSanctionRequestFormOptions().pipe(
+    tap((options) => {
+      this.sanctionFeePerTeam = options.sanctionFeePerTeam;
+      this.sanctionNetIncomeLimit = options.sanctionNetIncomeLimit;
+    })
+  );
   private readonly requiredFields = [
     { controlName: 'tournamentContactName', label: 'Club Contact Name' },
     { controlName: 'tournamentDirectorName', label: 'Tournament Director Name' },
@@ -46,7 +51,8 @@ export class SanctionRequestFormPageComponent implements OnInit {
   renewalSourceText = '';
   editSourceText = '';
   editRequestId = '';
-  readonly sanctionFeePerTeam = SANCTION_FEE_PER_TEAM;
+  sanctionFeePerTeam = 0;
+  sanctionNetIncomeLimit = 0;
   readonly paymentTypeOptions: MultiSelectOption[] = [
     { value: 'Credit Card', label: 'Credit Card' },
     { value: 'Check', label: 'Check' } 
@@ -218,7 +224,7 @@ export class SanctionRequestFormPageComponent implements OnInit {
   }
 
   get expenseSanctionFees(): number {
-    return this.expenseTeams * SANCTION_FEE_PER_TEAM;
+    return this.expenseTeams * this.sanctionFeePerTeam;
   }
 
   get entryFeeIncome(): number {
@@ -240,7 +246,7 @@ export class SanctionRequestFormPageComponent implements OnInit {
   }
 
   get isProfitTooHigh(): boolean {
-    return this.netIncome > SANCTION_NET_INCOME_LIMIT;
+    return this.netIncome > this.sanctionNetIncomeLimit;
   }
 
   get submitDisabledReason(): string {

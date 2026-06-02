@@ -58,6 +58,8 @@ The checked-in `.env.*.example` files document the required variables:
 - `CHRVA_NEXT_SEASON`
 - `CHRVA_SEASON_STATUS`
 - `CHRVA_SANCTION_STATUS`
+- `CHRVA_SANCTION_FEE_PER_TEAM`
+- `CHRVA_SANCTION_NET_INCOME_LIMIT`
 - `CHRVA_AUTH_SECRET`
 - `CHRVA_EMAIL_DRY_RUN`
 - `CHRVA_SMTP_HOST`
@@ -70,6 +72,10 @@ The checked-in `.env.*.example` files document the required variables:
 
 On Vercel, add those same names as Project Environment Variables. Do not commit
 real SQL Server credentials.
+
+`CHRVA_SANCTION_FEE_PER_TEAM` and `CHRVA_SANCTION_NET_INCOME_LIMIT` control the
+sanction request worksheet calculations. Update them in Vercel and redeploy to
+change the values without a code change.
 
 Email delivery is used by club-director broadcasts, tournament-director
 broadcasts, and sanction request submission confirmations. Outgoing email uses
