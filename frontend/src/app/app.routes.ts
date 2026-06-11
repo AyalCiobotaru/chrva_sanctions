@@ -7,6 +7,7 @@ import { CoordinatorsPageComponent } from '@features/coordinators/coordinators-p
 import { LoginPageComponent } from '@features/login/login-page.component';
 import { MigrationPageComponent } from '@features/migration/migration-page.component';
 import { OverviewPageComponent } from '@features/overview/overview-page.component';
+import { ReportsPageComponent } from '@features/reports/reports-page.component';
 import { CurrentSanctionRequestsPageComponent } from '@features/sanction-requests/current/current-sanction-requests-page.component';
 import { SanctionRequestFormPageComponent } from '@features/sanction-requests/form/sanction-request-form-page.component';
 import { SanctionHistoryPageComponent } from '@features/sanction-requests/history/sanction-history-page.component';
@@ -52,10 +53,12 @@ export const routes: Routes = [
   { path: 'clubs', component: ClubsPageComponent, canActivate: [authGuard], title: 'Club Contacts' },
   { path: 'coordinators', component: CoordinatorsPageComponent, canActivate: [authGuard], title: 'Regional Junior Contacts' },
   { path: 'tournaments', component: TournamentsPageComponent, canActivate: [authGuard], title: 'AES Tournaments' },
+  { path: 'reports', component: ReportsPageComponent, canActivate: [authGuard], title: 'Reports' },
   {
     path: 'admin/sanction-requests/current',
     component: AdminCurrentSanctionRequestsPageComponent,
     canActivate: [authGuard],
+    data: { blockedRoles: ['generic'] },
     title: 'Admin Current Sanction Requests'
   },
   {

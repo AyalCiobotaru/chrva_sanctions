@@ -6,7 +6,7 @@ export interface LegacyConfig {
   sanctionStatus: 'Open' | 'Closed';
 }
 
-export type AuthRole = 'master' | 'toolsAdmin';
+export type AuthRole = 'master' | 'toolsAdmin' | 'generic';
 
 export interface AuthUser {
   username: string;

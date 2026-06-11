@@ -7,6 +7,7 @@ export const authGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const requiredRole = route.data['requiredRole'] as string | undefined;
+  const blockedRoles = route.data['blockedRoles'] as string[] | undefined;
 
   return auth.loadSession().pipe(
     map((session) => {
@@ -17,6 +18,10 @@ export const authGuard: CanActivateFn = (route, state) => {
       }
 
       if (requiredRole && session.user?.role !== requiredRole) {
+        return router.createUrlTree(['/']);
+      }
+
+      if (session.user && blockedRoles?.includes(session.user.role)) {
         return router.createUrlTree(['/']);
       }
 

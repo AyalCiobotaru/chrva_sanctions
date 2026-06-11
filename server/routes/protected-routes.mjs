@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { requireRole, requireSession } from '../auth.mjs';
+import { requireAnyRole, requireRole, requireSession } from '../auth.mjs';
 import {
   createClub,
   createCoordinator,
@@ -79,23 +79,28 @@ export async function handleProtectedRoutes({ appRoot, request, response, route,
   }
 
   if (route === 'GET /api/admin/sanction-requests/current') {
+    requireAnyRole(request, ['master', 'toolsAdmin']);
     return json(response, await getAdminCurrentSanctionRequests(url.searchParams));
   }
 
   if (route === 'GET /api/admin/sanction-requests/tournament-director-email') {
+    requireAnyRole(request, ['master', 'toolsAdmin']);
     return json(response, await getTournamentDirectorEmailBroadcast(url.searchParams));
   }
 
   if (route === 'POST /api/admin/sanction-requests/tournament-director-email') {
+    requireAnyRole(request, ['master', 'toolsAdmin']);
     return json(response, await sendTournamentDirectorEmailBroadcast(url.searchParams, await readJson(request)));
   }
 
   if (request.method === 'GET' && url.pathname.startsWith('/api/admin/sanction-requests/')) {
+    requireAnyRole(request, ['master', 'toolsAdmin']);
     const requestId = decodeURIComponent(url.pathname.slice('/api/admin/sanction-requests/'.length));
     return json(response, await getAdminSanctionRequestDetail(requestId));
   }
 
   if (request.method === 'PUT' && url.pathname.startsWith('/api/admin/sanction-requests/') && url.pathname.endsWith('/review')) {
+    requireAnyRole(request, ['master', 'toolsAdmin']);
     const requestId = decodeURIComponent(url.pathname.slice('/api/admin/sanction-requests/'.length, -'/review'.length));
     return json(response, await updateAdminSanctionRequestReview(requestId, await readJson(request)));
   }

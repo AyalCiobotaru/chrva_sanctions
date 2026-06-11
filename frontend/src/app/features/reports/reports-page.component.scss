@@ -1,0 +1,31 @@
+.reports-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 20px 56px;
+}
+
+.page-heading {
+  max-width: 720px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #4f46e5;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 10px;
+  color: #111827;
+  font-size: clamp(2rem, 3vw, 3.25rem);
+  letter-spacing: 0;
+}
+
+p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+}

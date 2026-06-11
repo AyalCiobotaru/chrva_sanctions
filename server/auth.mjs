@@ -18,6 +18,13 @@ const users = [
     displayName: 'toolsAdmin',
     salt: '_tSSERXTCudltJO5LX41Uw',
     passwordHash: 'YN41qgZhmN1RVrJgsMA8vGETwUDckJ3SffOlJT4BefzoCIixjfUajcHTbivzJ5nqBMLcaRuiNceB1a6ECEA2QA'
+  },
+  {
+    username: 'TCAGirls',
+    role: 'generic',
+    displayName: 'TCAGirls',
+    salt: 'Jknz53gHmQnSIKAtrT1OcA',
+    passwordHash: 'uKB5wb9oE7lqL8tuM8ZaIyj_dpM613KzrMxcU-uVg7E88jacNK43tfWm0Y0A8qAlOgh84uD_iHIQlq5cLJvRWA'
   }
 ];
 
@@ -122,6 +129,16 @@ export function requireRole(request, role) {
   const user = requireSession(request);
 
   if (user.role !== role) {
+    throw httpError(403, 'You do not have access to this page.', 'ERR_FORBIDDEN');
+  }
+
+  return user;
+}
+
+export function requireAnyRole(request, roles) {
+  const user = requireSession(request);
+
+  if (!roles.includes(user.role)) {
     throw httpError(403, 'You do not have access to this page.', 'ERR_FORBIDDEN');
   }
 

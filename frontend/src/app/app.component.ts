@@ -14,6 +14,7 @@ interface NavItem {
   path: string;
   label: string;
   role?: string;
+  blockedRoles?: string[];
   public?: boolean;
 }
 
@@ -52,7 +53,8 @@ export class AppComponent implements OnInit, OnDestroy {
     { path: '/clubs', label: 'Clubs' },
     { path: '/coordinators', label: 'Coordinators' },
     { path: '/tournaments', label: 'AES Tournaments' },
-    { path: '/admin/sanction-requests/current', label: 'Sanction Requests' },
+    { path: '/reports', label: 'Reports' },
+    { path: '/admin/sanction-requests/current', label: 'Sanction Requests', blockedRoles: ['generic'] },
     { path: '/migration', label: 'Migration', role: 'master' }
   ];
   readonly clubNavItems: NavItem[] = [
@@ -98,6 +100,10 @@ export class AppComponent implements OnInit, OnDestroy {
   canShowNavItem(item: NavItem, session: AuthSession): boolean {
     if (item.role) {
       return session.user?.role === item.role;
+    }
+
+    if (session.user && item.blockedRoles?.includes(session.user.role)) {
+      return false;
     }
 
     return item.path === '/' || item.public === true || session.authenticated;
