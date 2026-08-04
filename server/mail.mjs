@@ -37,7 +37,7 @@ export async function sendEmail(message) {
 
     if (config.startTls) {
       await client.command('STARTTLS', [220]);
-      await client.secure(config.host);
+      await client.secure(config.tlsServername || config.host);
       await client.ehlo();
     }
 
@@ -76,6 +76,7 @@ function smtpConfig() {
     port: Number.isInteger(port) ? port : secure ? 465 : 25,
     secure,
     startTls: envFlag('CHRVA_SMTP_STARTTLS', false),
+    tlsServername: text(process.env.CHRVA_SMTP_TLS_SERVERNAME),
     username: text(process.env.CHRVA_SMTP_USER),
     password: text(process.env.CHRVA_SMTP_PASSWORD)
   };
@@ -156,8 +157,9 @@ function renderMessage(message) {
 class SmtpClient {
   static connect(config) {
     return new Promise((resolve, reject) => {
+      const tlsServername = config.tlsServername || config.host;
       const socket = config.secure
-        ? tls.connect(config.port, config.host, { servername: config.host })
+        ? tls.connect(config.port, config.host, { servername: tlsServername })
         : net.connect(config.port, config.host);
       const client = new SmtpClient(socket);
 

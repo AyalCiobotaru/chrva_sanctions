@@ -66,6 +66,7 @@ The checked-in `.env.*.example` files document the required variables:
 - `CHRVA_SMTP_PORT`
 - `CHRVA_SMTP_SECURE`
 - `CHRVA_SMTP_STARTTLS`
+- `CHRVA_SMTP_TLS_SERVERNAME`
 - `CHRVA_SMTP_USER`
 - `CHRVA_SMTP_PASSWORD`
 - `CHRVA_SMTP_HELO`
@@ -83,6 +84,13 @@ broadcasts, and sanction request submission confirmations. Outgoing email uses
 footer. Keep
 `CHRVA_EMAIL_DRY_RUN=true` in local/test environments unless a real SMTP server
 is intentionally configured.
+
+If the SMTP host is a customer-domain alias whose TLS certificate is issued to
+the mail provider instead, keep `CHRVA_SMTP_HOST` as the connection host and set
+`CHRVA_SMTP_TLS_SERVERNAME` to a DNS name listed on the provider certificate.
+For example, Hostek-hosted mail aliases that present a `hostek.com` certificate
+should use `CHRVA_SMTP_TLS_SERVERNAME=hostek.com` instead of disabling TLS
+verification.
 
 ## Vercel Deployment
 
