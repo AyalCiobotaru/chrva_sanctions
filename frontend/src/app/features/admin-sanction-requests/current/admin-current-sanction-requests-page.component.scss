@@ -267,17 +267,25 @@ small {
   display: flex;
 }
 
-:is(.review-actions, .row-actions) {
+.review-actions,
+.row-actions {
   gap: 8px;
+}
 
-  button.secondary {
-    background: #fff;
-    color: var(--navy);
-  }
+.review-actions button.secondary {
+  background: #fff;
+  color: var(--navy);
 }
 
 .row-actions {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding-right: 2px;
+
+  button {
+    padding: 7px 8px;
+    white-space: nowrap;
+  }
 
   .approve {
     background: var(--success);
@@ -396,6 +404,18 @@ small {
   span {
     font-size: 13px;
     font-weight: 700;
+  }
+
+  :is(th, td):nth-child(4) {
+    width: 54px;
+  }
+
+  :is(th, td):nth-child(14) {
+    width: 190px;
+  }
+
+  td:nth-child(10) {
+    font-size: 12px;
   }
 }
 
