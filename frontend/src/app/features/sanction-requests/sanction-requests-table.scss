@@ -16,7 +16,6 @@ table {
   background: #ffffff;
   border-collapse: collapse;
   border: 1px solid #d9e1ec;
-  table-layout: fixed;
   width: 100%;
 }
 
@@ -71,23 +70,8 @@ small {
 
 .actions-cell {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 6px;
-}
-
-th:first-child,
-td:first-child {
-  width: 198px;
-}
-
-th:nth-child(5),
-td:nth-child(5) {
-  width: 72px;
-}
-
-th:nth-child(7),
-td:nth-child(7) {
-  width: 52px;
 }
 
 .action-error {

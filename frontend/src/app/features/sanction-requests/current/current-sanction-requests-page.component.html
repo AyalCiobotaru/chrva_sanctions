@@ -40,8 +40,8 @@
             >
               View
             </a>
-            <a class="request-link secondary" [routerLink]="['/sanction-requests', request.id, 'edit']">Edit</a>
             @if (request.canModify) {
+              <a class="request-link secondary" [routerLink]="['/sanction-requests', request.id, 'edit']">Edit</a>
               <button
                 type="button"
                 class="request-link danger"

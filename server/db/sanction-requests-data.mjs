@@ -578,6 +578,8 @@ export async function updateSanctionRequest(clubCode, requestId, body) {
   const pool = await getPool();
   const existing = await getSanctionRequestRow(pool, clubCode, requestId);
 
+  ensureEditableSanctionRequest(existing);
+
   const request = normalizeSanctionRequestInput(body);
   const errors = validateSanctionRequest(request);
 
