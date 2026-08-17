@@ -62,6 +62,13 @@ export const routes: Routes = [
     title: 'Admin Current Sanction Requests'
   },
   {
+    path: 'admin/sanction-requests/:id/edit',
+    component: SanctionRequestFormPageComponent,
+    canActivate: [authGuard],
+    data: { blockedRoles: ['generic'] },
+    title: 'Edit Sanction Request'
+  },
+  {
     path: 'migration',
     component: MigrationPageComponent,
     canActivate: [authGuard],

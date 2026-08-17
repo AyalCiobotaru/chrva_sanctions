@@ -1,6 +1,7 @@
 import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { ChangeDetectorRef, Component, NgZone, OnDestroy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { finalize, map, merge, startWith, Subject, switchMap, tap } from 'rxjs';
 import {
   AdminCurrentSanctionRequestsResult,
@@ -28,7 +29,7 @@ interface AdminSanctionRequestWeekGroup {
 @Component({
   selector: 'app-admin-current-sanction-requests-page',
   standalone: true,
-  imports: [AsyncPipe, CurrencyPipe, ModalComponent, MultiSelectDropdownComponent, ReactiveFormsModule, RichTextEditorComponent],
+  imports: [AsyncPipe, CurrencyPipe, ModalComponent, MultiSelectDropdownComponent, ReactiveFormsModule, RichTextEditorComponent, RouterLink],
   templateUrl: './admin-current-sanction-requests-page.component.html',
   styleUrl: './admin-current-sanction-requests-page.component.scss'
 })

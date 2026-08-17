@@ -7,6 +7,7 @@ import {
   deleteCoordinator,
   exportClubsDirectory,
   getAdminCurrentSanctionRequests,
+  getAdminSanctionRequestFormOptions,
   getAdminSanctionRequestDetail,
   getClubEmailBroadcast,
   getTournamentDirectorEmailBroadcast,
@@ -16,6 +17,7 @@ import {
   sendClubEmailBroadcast,
   sendTournamentDirectorEmailBroadcast,
   updateAdminSanctionRequestReview,
+  updateAdminSanctionRequest,
   updateClub,
   updateCoordinator,
   updateTournamentAddedToAes,
@@ -88,6 +90,12 @@ export async function handleProtectedRoutes({ appRoot, request, response, route,
     return json(response, await getTournamentDirectorEmailBroadcast(url.searchParams));
   }
 
+  if (request.method === 'GET' && url.pathname.startsWith('/api/admin/sanction-requests/') && url.pathname.endsWith('/form-options')) {
+    requireAnyRole(request, ['master', 'toolsAdmin']);
+    const requestId = decodeURIComponent(url.pathname.slice('/api/admin/sanction-requests/'.length, -'/form-options'.length));
+    return json(response, await getAdminSanctionRequestFormOptions(requestId));
+  }
+
   if (route === 'POST /api/admin/sanction-requests/tournament-director-email') {
     requireAnyRole(request, ['master', 'toolsAdmin']);
     return json(response, await sendTournamentDirectorEmailBroadcast(url.searchParams, await readJson(request)));
@@ -103,6 +111,12 @@ export async function handleProtectedRoutes({ appRoot, request, response, route,
     requireAnyRole(request, ['master', 'toolsAdmin']);
     const requestId = decodeURIComponent(url.pathname.slice('/api/admin/sanction-requests/'.length, -'/review'.length));
     return json(response, await updateAdminSanctionRequestReview(requestId, await readJson(request)));
+  }
+
+  if (request.method === 'PUT' && url.pathname.startsWith('/api/admin/sanction-requests/')) {
+    requireAnyRole(request, ['master', 'toolsAdmin']);
+    const requestId = decodeURIComponent(url.pathname.slice('/api/admin/sanction-requests/'.length));
+    return json(response, await updateAdminSanctionRequest(requestId, await readJson(request)));
   }
 
   if (request.method === 'PUT' && url.pathname.startsWith('/api/tournaments/') && url.pathname.endsWith('/added-to-aes')) {

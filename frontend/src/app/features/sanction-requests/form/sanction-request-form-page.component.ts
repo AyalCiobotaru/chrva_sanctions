@@ -2,7 +2,7 @@ import { AsyncPipe, CurrencyPipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize, Observable, take, tap } from 'rxjs';
+import { defer, finalize, Observable, take, tap } from 'rxjs';
 import { CreateSanctionRequestResult, SanctionVenueOption } from '@core/api.models';
 import { DEFAULT_SANCTION_START_TIME } from '@core/business-rules';
 import { ChrvaApiService } from '@core/chrva-api.service';
@@ -18,7 +18,12 @@ import { SanctionRequestPageHeaderComponent } from '../page-header/sanction-requ
   styleUrl: './sanction-request-form-page.component.scss'
 })
 export class SanctionRequestFormPageComponent implements OnInit {
-  readonly options$ = this.api.getSanctionRequestFormOptions().pipe(
+  readonly options$ = defer(() => {
+    const requestId = this.route.snapshot.paramMap.get('id');
+    return this.isAdminEdit && requestId
+      ? this.api.getAdminSanctionRequestFormOptions(requestId)
+      : this.api.getSanctionRequestFormOptions();
+  }).pipe(
     tap((options) => {
       this.sanctionFeePerTeam = options.sanctionFeePerTeam;
       this.sanctionNetIncomeLimit = options.sanctionNetIncomeLimit;
@@ -51,6 +56,7 @@ export class SanctionRequestFormPageComponent implements OnInit {
   renewalSourceText = '';
   editSourceText = '';
   editRequestId = '';
+  isAdminEdit = false;
   sanctionFeePerTeam = 0;
   sanctionNetIncomeLimit = 0;
   readonly paymentTypeOptions: MultiSelectOption[] = [
@@ -107,7 +113,9 @@ export class SanctionRequestFormPageComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly route: ActivatedRoute,
     private readonly router: Router
-  ) {}
+  ) {
+    this.isAdminEdit = this.router.url.startsWith('/admin/sanction-requests/');
+  }
 
   ngOnInit(): void {
     this.route.queryParamMap.pipe(take(1)).subscribe((params) => {
@@ -147,7 +155,11 @@ export class SanctionRequestFormPageComponent implements OnInit {
 
       this.editRequestId = requestId;
       this.loadingEdit = true;
-      this.api.getSanctionRequest(requestId).pipe(
+      const detail$ = this.isAdminEdit
+        ? this.api.getAdminSanctionRequest(requestId)
+        : this.api.getSanctionRequest(requestId);
+
+      detail$.pipe(
         finalize(() => {
           this.loadingEdit = false;
         })
@@ -179,7 +191,7 @@ export class SanctionRequestFormPageComponent implements OnInit {
 
     this.submitting = true;
     const saveRequest$: Observable<unknown> = this.editRequestId
-      ? this.api.updateSanctionRequest(this.editRequestId, this.form.getRawValue())
+      ? this.updateExistingRequest()
       : this.api.createSanctionRequest(this.form.getRawValue());
 
     saveRequest$.pipe(
@@ -189,7 +201,7 @@ export class SanctionRequestFormPageComponent implements OnInit {
     ).subscribe({
       next: (result: unknown) => {
         this.showEmailResult(result);
-        void this.router.navigateByUrl('/sanction-requests/current');
+        void this.router.navigateByUrl(this.isAdminEdit ? '/admin/sanction-requests/current' : '/sanction-requests/current');
       },
       error: (error: unknown) => {
         this.submitError = getHttpErrorMessage(error, 'Unable to submit sanction request.');
@@ -198,7 +210,7 @@ export class SanctionRequestFormPageComponent implements OnInit {
   }
 
   cancelEdit(): void {
-    void this.router.navigateByUrl('/sanction-requests/current');
+    void this.router.navigateByUrl(this.isAdminEdit ? '/admin/sanction-requests/current' : '/sanction-requests/current');
   }
 
   selectVenue(event: Event, venues: SanctionVenueOption[]): void {
@@ -293,5 +305,11 @@ export class SanctionRequestFormPageComponent implements OnInit {
       'chrvaEmailStatus',
       email.message || (email.sent ? 'Confirmation email sent.' : 'Confirmation email was not sent.')
     );
+  }
+
+  private updateExistingRequest(): Observable<unknown> {
+    return this.isAdminEdit
+      ? this.api.updateAdminSanctionRequest(this.editRequestId, this.form.getRawValue())
+      : this.api.updateSanctionRequest(this.editRequestId, this.form.getRawValue());
   }
 }

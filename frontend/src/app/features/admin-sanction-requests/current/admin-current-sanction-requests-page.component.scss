@@ -410,8 +410,16 @@ small {
     width: 54px;
   }
 
+  :is(th, td):nth-child(6) {
+    width: 72px;
+  }
+
+  :is(th, td):nth-child(8) {
+    width: 52px;
+  }
+
   :is(th, td):nth-child(14) {
-    width: 190px;
+    width: 236px;
   }
 
   td:nth-child(10) {
