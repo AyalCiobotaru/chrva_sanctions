@@ -44,7 +44,8 @@ export class ClubsPageComponent {
     { email: 'registrar@chrvavb.org', name: 'Registrar', clubName: 'CHRVA Staff' },
     { email: 'noel.okoye@chrvavb.org', name: 'Noel Okoye', clubName: 'CHRVA Staff' },
     { email: 'bill.murray@chrvavb.org', name: 'Bill Murray', clubName: 'CHRVA Staff' },
-    { email: 'diego.matorras@chrvavb.org', name: 'Diego Matorras', clubName: 'CHRVA Staff' }
+    { email: 'diego.matorras@chrvavb.org', name: 'Diego Matorras', clubName: 'CHRVA Staff' },
+    { email: 'lauren.leventry@chrvavb.org', name: 'Lauren Leventry', clubName: 'CHRVA Staff'}
   ];
 
   readonly form = this.fb.nonNullable.group({
