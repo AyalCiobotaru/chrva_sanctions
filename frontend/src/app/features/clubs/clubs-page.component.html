@@ -87,6 +87,7 @@
             (keydown.enter)="addManualEmailRecipient(); $event.preventDefault()"
           />
           <button type="button" class="secondary" [disabled]="sendingEmail" (click)="addManualEmailRecipient()">Add</button>
+          <button type="button" class="secondary" [disabled]="sendingEmail" (click)="addStaffEmailRecipients()">Staff</button>
         </span>
       </label>
 

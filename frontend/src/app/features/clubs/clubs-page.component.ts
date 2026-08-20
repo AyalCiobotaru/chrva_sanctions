@@ -34,6 +34,19 @@ export class ClubsPageComponent {
     { value: 'O', label: 'Outdoor' }
   ];
 
+  readonly staffEmailRecipients: ClubEmailRecipient[] = [
+    { email: 'lisa.digiacinto@chrvavb.org', name: 'Lisa Digiacinto', clubName: 'CHRVA Staff' },
+    { email: 'kaitlin.digiacinto@chrvavb.org', name: 'Kaitlin Digiacinto', clubName: 'CHRVA Staff' },
+    { email: 'chris.cant@chrvavb.org', name: 'Chris Cant', clubName: 'CHRVA Staff' },
+    { email: 'peggy.vanlowe@chrvavb.org', name: 'Peggy Vanlowe', clubName: 'CHRVA Staff' },
+    { email: 'charles.ezigbo@chrvavb.org', name: 'Charles Ezigbo', clubName: 'CHRVA Staff' },
+    { email: 'rebecca.johannes@chrvavb.org', name: 'Rebecca Johannes', clubName: 'CHRVA Staff' },
+    { email: 'registrar@chrvavb.org', name: 'Registrar', clubName: 'CHRVA Staff' },
+    { email: 'noel.okoye@chrvavb.org', name: 'Noel Okoye', clubName: 'CHRVA Staff' },
+    { email: 'bill.murray@chrvavb.org', name: 'Bill Murray', clubName: 'CHRVA Staff' },
+    { email: 'diego.matorras@chrvavb.org', name: 'Diego Matorras', clubName: 'CHRVA Staff' }
+  ];
+
   readonly form = this.fb.nonNullable.group({
     activeStatus: 'active' as 'active' | 'inactive' | 'all',
     clubTypes: [[] as string[]],
@@ -227,6 +240,35 @@ export class ClubsPageComponent {
     if (added) {
       this.emailForm.controls.manualRecipientEmail.setValue('');
     }
+  }
+
+  addStaffEmailRecipients(): void {
+    if (!this.emailBroadcast) {
+      this.emailStatus = '';
+      this.emailError = 'Unable to add staff until the email composer is loaded.';
+      this.changeDetector.detectChanges();
+      return;
+    }
+
+    const existingEmails = new Set(this.emailBroadcast.recipients.map((recipient) => recipient.email.toLowerCase()));
+    const newRecipients = this.staffEmailRecipients.filter((recipient) => !existingEmails.has(recipient.email.toLowerCase()));
+
+    this.emailError = '';
+
+    if (newRecipients.length === 0) {
+      this.emailStatus = 'Staff recipients are already in the email list.';
+      this.changeDetector.detectChanges();
+      return;
+    }
+
+    const recipients = [...this.emailBroadcast.recipients, ...newRecipients];
+    this.emailBroadcast = {
+      ...this.emailBroadcast,
+      recipients,
+      recipientCount: recipients.length
+    };
+    this.emailStatus = `Added ${newRecipients.length} staff recipient${newRecipients.length === 1 ? '' : 's'}.`;
+    this.changeDetector.detectChanges();
   }
 
   sendEmailBroadcast(): void {
