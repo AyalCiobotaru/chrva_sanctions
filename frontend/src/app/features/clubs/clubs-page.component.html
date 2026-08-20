@@ -76,30 +76,45 @@
         }
       </div>
     }
-    <div class="form-actions">
-      <button type="submit" [disabled]="emailForm.invalid || !emailBroadcast?.recipientCount || sendingEmail">
-        @if (sendingEmail) {
-          <span class="loading-spinner" aria-hidden="true"></span>
-        }
-        <span>{{ sendingEmail ? 'Sending...' : 'Send' }}</span>
-      </button>
-      <button
-        type="button"
-        class="secondary"
-        [disabled]="sendingEmail || !emailBroadcast?.recipientCount"
-        (click)="removeAllEmailRecipients()"
-      >
-        Remove All Recipients
-      </button>
-      <button
-        type="button"
-        class="secondary"
-        [disabled]="sendingEmail"
-        (click)="addAllEmailRecipients()"
-      >
-        Add All Recipients
-      </button>
-      <button type="button" class="secondary" [disabled]="sendingEmail" (click)="showEmailBroadcast = false">Cancel</button>
+    <div class="email-action-row wide">
+      <label class="manual-recipient">
+        Add Recipient
+        <span>
+          <input
+            formControlName="manualRecipientEmail"
+            maxlength="80"
+            placeholder="email@example.com"
+            (keydown.enter)="addManualEmailRecipient(); $event.preventDefault()"
+          />
+          <button type="button" class="secondary" [disabled]="sendingEmail" (click)="addManualEmailRecipient()">Add</button>
+        </span>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="emailForm.invalid || !emailBroadcast?.recipientCount || sendingEmail">
+          @if (sendingEmail) {
+            <span class="loading-spinner" aria-hidden="true"></span>
+          }
+          <span>{{ sendingEmail ? 'Sending...' : 'Send' }}</span>
+        </button>
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="sendingEmail || !emailBroadcast?.recipientCount"
+          (click)="removeAllEmailRecipients()"
+        >
+          Remove All Recipients
+        </button>
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="sendingEmail"
+          (click)="addAllEmailRecipients()"
+        >
+          Add All Recipients
+        </button>
+        <button type="button" class="secondary" [disabled]="sendingEmail" (click)="showEmailBroadcast = false">Cancel</button>
+      </div>
     </div>
   </form>
 }
@@ -113,16 +128,12 @@
       <option value="inactive">Inactive Only</option>
     </select>
   </label>
-  <label>
-    Club Type
-    <select formControlName="clubType">
-      <option value="">All</option>
-      <option value="G">Girls</option>
-      <option value="B">Boys</option>
-      <option value="A">Adults</option>
-      <option value="O">Outdoor</option>
-    </select>
-  </label>
+  <app-multi-select-dropdown
+    formControlName="clubTypes"
+    label="Club Type"
+    placeholder="All club types"
+    [options]="clubTypeOptions"
+  ></app-multi-select-dropdown>
   <label>
     Club Name
     <input formControlName="clubName" />

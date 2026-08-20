@@ -229,6 +229,27 @@ small {
   padding: 10px;
 }
 
+.email-action-row {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.manual-recipient {
+  flex: 0 1 420px;
+}
+
+.manual-recipient span {
+  display: flex;
+  gap: 8px;
+}
+
+.manual-recipient input {
+  min-width: 0;
+  width: 100%;
+}
+
 .recipient-list {
   border: 1px solid #d9e1ec;
   display: grid;
@@ -287,5 +308,15 @@ small {
   .email-form,
   .recipient-list {
     grid-template-columns: 1fr;
+  }
+
+  .email-action-row,
+  .manual-recipient span {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .form-actions {
+    justify-content: start;
   }
 }

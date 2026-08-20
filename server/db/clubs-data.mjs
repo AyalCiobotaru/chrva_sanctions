@@ -9,6 +9,7 @@ import {
   getPool,
   html,
   mapClub,
+  normalizeWebsite,
   normalizeClubInput,
   sendRecipientEmails,
   text,
@@ -21,6 +22,7 @@ export async function searchClubs(filters) {
   const request = pool.request();
   const activeStatus = text(filters.get('activeStatus') || 'active').toLowerCase();
   const meetingNoShows = filters.get('meetingNoShows') === 'true';
+  const clubTypes = csv(filters.get('clubType')).map((value) => value.toUpperCase());
   const where = [
     "grouping = 'Juniors'"
   ];
@@ -34,9 +36,13 @@ export async function searchClubs(filters) {
     where.push("active = 'N'");
   }
 
-  if (filters.get('clubType')) {
-    request.input('clubType', sql.NVarChar, `%${text(filters.get('clubType')).toUpperCase()}%`);
-    where.push('clubType like @clubType');
+  if (clubTypes.length > 0) {
+    const predicates = clubTypes.map((clubType, index) => {
+      const name = `clubType${index}`;
+      request.input(name, sql.NVarChar, `%${clubType}%`);
+      return `upper(isnull(clubType, '')) like @${name}`;
+    });
+    where.push(`(${predicates.join(' or ')})`);
   }
 
   addStartsWith(where, request, 'clubName', 'ClubName', filters.get('clubName'));
@@ -87,6 +93,78 @@ export async function searchClubs(filters) {
     total: clubs.length,
     activeTotal: counts.recordset[0]?.activeTotal ?? 0,
     attendingTotal: counts.recordset[0]?.attendingTotal ?? 0
+  };
+}
+
+export async function searchPublicClubs(filters) {
+  const pool = await getPool();
+  const request = pool.request();
+  const keyword = text(filters.get('keyword'));
+  const states = csv(filters.get('state')).map((value) => value.toUpperCase());
+  const clubTypes = csv(filters.get('clubType')).map((value) => value.toUpperCase());
+  const where = [
+    "grouping = 'Juniors'",
+    "active = 'Y'"
+  ];
+
+  if (keyword) {
+    request.input('keywordContains', sql.NVarChar, `%${keyword}%`);
+    request.input('keywordPrefix', sql.NVarChar, `${keyword}%`);
+    where.push(`(
+      ClubName like @keywordContains
+      or contactFname like @keywordContains
+      or contactLname like @keywordContains
+      or city like @keywordContains
+      or st like @keywordPrefix
+      or zip like @keywordPrefix
+    )`);
+  }
+
+  if (states.length > 0) {
+    const placeholders = states.map((state, index) => {
+      const name = `state${index}`;
+      request.input(name, sql.NVarChar, state);
+      return `@${name}`;
+    });
+    where.push(`upper(st) in (${placeholders.join(', ')})`);
+  }
+
+  if (clubTypes.length > 0) {
+    const predicates = clubTypes.map((clubType, index) => {
+      const name = `clubType${index}`;
+      request.input(name, sql.NVarChar, `%${clubType}%`);
+      return `upper(isnull(clubType, '')) like @${name}`;
+    });
+    where.push(`(${predicates.join(' or ')})`);
+  }
+
+  const result = await request.query(`
+    select
+      ClubCode,
+      ClubName,
+      contactFname,
+      contactLname,
+      straddress1,
+      straddress2,
+      city,
+      st,
+      zip,
+      phone1,
+      phone2,
+      ext,
+      email,
+      club_web_page,
+      clubType
+    from clubcontacts
+    where ${where.join(' and ')}
+    order by ClubName
+  `);
+
+  const clubs = result.recordset.map(mapPublicClub);
+
+  return {
+    clubs,
+    total: clubs.length
   };
 }
 
@@ -356,6 +434,32 @@ export async function sendClubEmailBroadcast(body) {
       ? 'Email delivery is not configured. This broadcast was validated but not sent.'
       : `Email broadcast sent to ${recipients.length} recipients.`
   };
+}
+
+function mapPublicClub(row) {
+  const phoneSecondary = text(row.phone2);
+  const extension = text(row.ext);
+
+  return {
+    clubCode: text(row.ClubCode),
+    clubName: text(row.ClubName),
+    contactFirstName: text(row.contactFname),
+    contactLastName: text(row.contactLname),
+    address1: text(row.straddress1),
+    address2: text(row.straddress2),
+    city: text(row.city),
+    state: text(row.st).toUpperCase(),
+    zip: text(row.zip),
+    phone: text(row.phone1),
+    phoneSecondary: extension && phoneSecondary ? `${phoneSecondary} ext. ${extension}` : phoneSecondary,
+    email: text(row.email),
+    website: normalizeWebsite(row.club_web_page),
+    clubType: text(row.clubType)
+  };
+}
+
+function csv(value) {
+  return text(value).split(',').map(text).filter(Boolean);
 }
 
 export async function exportClubsDirectory() {

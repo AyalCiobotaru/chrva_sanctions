@@ -7,12 +7,13 @@ import { ChrvaApiService } from '@core/chrva-api.service';
 import { getHttpErrorMessage } from '@core/http-error';
 import { ClubFormComponent } from './club-form/club-form.component';
 import { ModalComponent } from '@util/modal/modal.component';
+import { MultiSelectDropdownComponent, MultiSelectOption } from '@util/multi-select-dropdown/multi-select-dropdown.component';
 import { RichTextEditorComponent } from '@util/rich-text-editor/rich-text-editor.component';
 
 @Component({
   selector: 'app-clubs-page',
   standalone: true,
-  imports: [AsyncPipe, ClubFormComponent, ModalComponent, ReactiveFormsModule, RichTextEditorComponent],
+  imports: [AsyncPipe, ClubFormComponent, ModalComponent, MultiSelectDropdownComponent, ReactiveFormsModule, RichTextEditorComponent],
   templateUrl: './clubs-page.component.html',
   styleUrl: './clubs-page.component.scss'
 })
@@ -26,9 +27,16 @@ export class ClubsPageComponent {
   emailStatus = '';
   sendingEmail = false;
 
+  readonly clubTypeOptions: MultiSelectOption[] = [
+    { value: 'G', label: 'Girls' },
+    { value: 'B', label: 'Boys' },
+    { value: 'A', label: 'Adults' },
+    { value: 'O', label: 'Outdoor' }
+  ];
+
   readonly form = this.fb.nonNullable.group({
     activeStatus: 'active' as 'active' | 'inactive' | 'all',
-    clubType: '',
+    clubTypes: [[] as string[]],
     clubName: '',
     state: '',
     meetingNoShows: false
@@ -38,7 +46,8 @@ export class ClubsPageComponent {
     clubType: 'R',
     from: ['', Validators.required],
     subject: ['', Validators.required],
-    information: ['', Validators.required]
+    information: ['', Validators.required],
+    manualRecipientEmail: ''
   });
 
   private readonly refresh$ = new Subject<void>();
@@ -190,6 +199,36 @@ export class ClubsPageComponent {
     });
   }
 
+  addManualEmailRecipient(): void {
+    const email = this.emailForm.controls.manualRecipientEmail.value.trim();
+
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      this.emailStatus = '';
+      this.emailError = 'Enter a valid email address before adding a recipient.';
+      this.changeDetector.detectChanges();
+      return;
+    }
+
+    if (!this.emailBroadcast) {
+      this.emailStatus = '';
+      this.emailError = 'Unable to add a recipient until the email composer is loaded.';
+      this.changeDetector.detectChanges();
+      return;
+    }
+
+    this.emailError = '';
+    this.emailStatus = '';
+    const added = this.addEmailRecipient({
+      email,
+      name: email,
+      clubName: 'Manual recipient'
+    });
+
+    if (added) {
+      this.emailForm.controls.manualRecipientEmail.setValue('');
+    }
+  }
+
   sendEmailBroadcast(): void {
     if (this.emailForm.invalid || !this.emailBroadcast) {
       this.emailForm.markAllAsTouched();
@@ -249,16 +288,16 @@ export class ClubsPageComponent {
     const raw = this.form.getRawValue();
     return {
       activeStatus: raw.activeStatus,
-      clubType: raw.clubType,
+      clubType: raw.clubTypes.join(','),
       clubName: raw.clubName,
       state: raw.state,
       meetingNoShows: raw.meetingNoShows ? 'true' : ''
     };
   }
 
-  private addEmailRecipient(recipient: ClubEmailRecipient): void {
+  private addEmailRecipient(recipient: ClubEmailRecipient): boolean {
     if (!this.emailBroadcast) {
-      return;
+      return false;
     }
 
     const exists = this.emailBroadcast.recipients.some((current) => {
@@ -269,7 +308,7 @@ export class ClubsPageComponent {
       this.emailStatus = '';
       this.emailError = `${recipient.email} is already in the email list.`;
       this.changeDetector.detectChanges();
-      return;
+      return false;
     }
 
     const recipients = [...this.emailBroadcast.recipients, recipient];
@@ -279,6 +318,7 @@ export class ClubsPageComponent {
       recipientCount: recipients.length
     };
     this.changeDetector.detectChanges();
+    return true;
   }
 
   private selectEmailSender(broadcast: ClubEmailBroadcast): void {

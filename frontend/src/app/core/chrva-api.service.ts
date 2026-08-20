@@ -24,6 +24,8 @@ import {
   NewClubRequest,
   NewSanctionRequest,
   CurrentSanctionRequestsResult,
+  PublicClubSearch,
+  PublicClubSearchResult,
   SanctionClubLoginRequest,
   SanctionClubSession,
   SanctionHistoryResult,
@@ -118,6 +120,12 @@ export class ChrvaApiService {
 
   searchClubs(search: ClubSearch): Observable<ClubSearchResult> {
     return this.http.get<ClubSearchResult>(`${this.baseUrl}/clubs`, {
+      params: this.toParams(search)
+    });
+  }
+
+  searchPublicClubs(search: PublicClubSearch): Observable<PublicClubSearchResult> {
+    return this.http.get<PublicClubSearchResult>(`${this.baseUrl}/public/clubs`, {
       params: this.toParams(search)
     });
   }

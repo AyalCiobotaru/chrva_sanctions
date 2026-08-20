@@ -197,6 +197,34 @@ export interface ClubSearch {
   meetingNoShows?: string;
 }
 
+export interface PublicClubSearch {
+  keyword?: string;
+  state?: string;
+  clubType?: string;
+}
+
+export interface PublicClubSummary {
+  clubCode: string;
+  clubName: string;
+  contactFirstName: string;
+  contactLastName: string;
+  address1: string;
+  address2: string;
+  city: string;
+  state: string;
+  zip: string;
+  website?: string;
+  phone?: string;
+  phoneSecondary?: string;
+  email: string;
+  clubType: string;
+}
+
+export interface PublicClubSearchResult {
+  clubs: PublicClubSummary[];
+  total: number;
+}
+
 export interface ClubSummary {
   clubCode: string;
   clubName: string;

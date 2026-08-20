@@ -7,12 +7,16 @@ import {
   getClubSession,
   getSessionUser
 } from '../auth.mjs';
-import { authenticateSanctionClub, getAppConfig } from '../db.mjs';
+import { authenticateSanctionClub, getAppConfig, searchPublicClubs } from '../db.mjs';
 import { json, readJson } from './http.mjs';
 
-export async function handlePublicRoutes({ request, response, route }) {
+export async function handlePublicRoutes({ request, response, route, url }) {
   if (route === 'GET /api/health') {
     return json(response, { ok: true });
+  }
+
+  if (route === 'GET /api/public/clubs') {
+    return json(response, await searchPublicClubs(url.searchParams));
   }
 
   if (route === 'GET /api/auth/session') {

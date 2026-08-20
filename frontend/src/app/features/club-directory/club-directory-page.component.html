@@ -1,0 +1,96 @@
+<section class="page-header">
+  <div>
+    <h1>Club Directory</h1>
+    <p>Browse active CHRVA junior clubs and public contact information.</p>
+  </div>
+</section>
+
+<form [formGroup]="form" class="filters">
+  <label>
+    Filter
+    <input formControlName="keyword" placeholder="Club, director, city, state, or zip" />
+  </label>
+  <app-multi-select-dropdown
+    formControlName="states"
+    label="State"
+    placeholder="All states"
+    [options]="stateOptions"
+  ></app-multi-select-dropdown>
+  <app-multi-select-dropdown
+    formControlName="clubTypes"
+    label="Club Type"
+    placeholder="All club types"
+    [options]="clubTypeOptions"
+  ></app-multi-select-dropdown>
+  <div class="filter-actions">
+    <button type="button" class="secondary" [disabled]="!hasFilters" (click)="clearFilters()">Clear Filters</button>
+  </div>
+</form>
+
+@if (clubs$ | async; as result) {
+  <div class="summary">
+    <strong>Showing {{ result.total }} active clubs</strong>
+    @if (hasFilters) {
+      <span>Filtered by the current directory controls.</span>
+    }
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Club Code</th>
+        <th>Club Name</th>
+        <th>Director</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Web Page</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (club of result.clubs; track club.clubCode) {
+        <tr>
+          <td>{{ club.clubCode }}</td>
+          <td>
+            <strong>{{ club.clubName }}</strong>
+            @if (club.clubType) {
+              <small>{{ clubTypeLabel(club.clubType) || club.clubType }}</small>
+            }
+          </td>
+          <td>{{ directorName(club) }}</td>
+          <td>
+            {{ club.city }}
+            @if (club.zip) {
+              <small>{{ club.zip }}</small>
+            }
+          </td>
+          <td>{{ club.state }}</td>
+          <td>
+            {{ club.phone }}
+            @if (club.phoneSecondary) {
+              <small>{{ club.phoneSecondary }}</small>
+            }
+          </td>
+          <td>
+            @if (club.email) {
+              <a [href]="'mailto:' + club.email">{{ club.email }}</a>
+            }
+          </td>
+          <td>
+            @if (club.website) {
+              <a [href]="websiteUrl(club.website)" target="_blank" rel="noreferrer">Website</a>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  @if (result.clubs.length === 0) {
+    <p class="empty">
+      No active clubs match these filters.
+      <button type="button" class="link-button" (click)="clearFilters()">Clear filters</button>
+    </p>
+  }
+}

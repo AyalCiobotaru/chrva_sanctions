@@ -8,7 +8,7 @@ import { AuthService } from '@core/auth.service';
 import { SanctionClubAuthService } from '@core/sanction-club-auth.service';
 import { ErrorBannerComponent } from '@util/error-banner/error-banner.component';
 
-type NavSection = 'admin' | 'clubs';
+type NavSection = 'admin' | 'clubs' | 'directory';
 
 interface NavItem {
   path: string;
@@ -47,6 +47,12 @@ export class AppComponent implements OnInit, OnDestroy {
       label: 'Clubs',
       description: 'Sanction requests and history',
       landingPath: '/sanction-requests/history'
+    },
+    {
+      id: 'directory',
+      label: 'Club Directory',
+      description: 'Public active club listing',
+      landingPath: '/club-directory'
     }
   ];
   readonly adminNavItems: NavItem[] = [
@@ -90,7 +96,15 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   get activeNavItems(): NavItem[] {
-    return this.activeSection === 'admin' ? this.adminNavItems : this.clubNavItems;
+    if (this.activeSection === 'admin') {
+      return this.adminNavItems;
+    }
+
+    if (this.activeSection === 'clubs') {
+      return this.clubNavItems;
+    }
+
+    return [];
   }
 
   get activeSectionLabel(): string {
@@ -142,6 +156,10 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private sectionFromUrl(url: string): NavSection {
+    if (url.startsWith('/club-directory')) {
+      return 'directory';
+    }
+
     return url.startsWith('/sanction-requests') ? 'clubs' : 'admin';
   }
 }

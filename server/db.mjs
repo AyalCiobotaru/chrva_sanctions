@@ -14,6 +14,7 @@ export {
   createClub,
   exportClubsDirectory,
   getClubEmailBroadcast,
+  searchPublicClubs,
   searchClubs,
   sendClubEmailBroadcast,
   updateClub

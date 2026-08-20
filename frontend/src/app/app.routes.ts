@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from '@core/auth.guard';
 import { sanctionClubGuard } from '@core/sanction-club.guard';
 import { AdminCurrentSanctionRequestsPageComponent } from '@features/admin-sanction-requests/current/admin-current-sanction-requests-page.component';
+import { ClubDirectoryPageComponent } from '@features/club-directory/club-directory-page.component';
 import { ClubsPageComponent } from '@features/clubs/clubs-page.component';
 import { CoordinatorsPageComponent } from '@features/coordinators/coordinators-page.component';
 import { LoginPageComponent } from '@features/login/login-page.component';
@@ -17,6 +18,7 @@ import { TournamentsPageComponent } from '@features/tournaments/tournaments-page
 
 export const routes: Routes = [
   { path: '', component: OverviewPageComponent, title: 'CHRVA Juniors Migration' },
+  { path: 'club-directory', component: ClubDirectoryPageComponent, title: 'Club Directory' },
   { path: 'login', component: LoginPageComponent, title: 'Sign in' },
   { path: 'sanction-requests/login', component: SanctionRequestLoginPageComponent, title: 'Sanction Request Login' },
   { path: 'sanction-requests', redirectTo: 'sanction-requests/history', pathMatch: 'full' },
